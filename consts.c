@@ -1,12 +1,12 @@
 #include "consts.h"
 
+/*
 const char *INSTRUCTIONS[] = {
-    /* R type*/
     "add", "sub", "and", "or", "nor", "move", "mvhi", "mvlo",
-    /* I type*/
+
     "addi", "subi", "andi", "ori", "nori", "bne", "beq", "blt", "bgt",
     "lb", "sb", "lw", "sw", "lh", "sh",
-    /* j type */
+
     "jmp", "la", "call", "hlt"
 };
 
@@ -30,3 +30,4 @@ const int NUM_INSTRUCTIONS = sizeof(INSTRUCTIONS) / sizeof(INSTRUCTIONS[0]);
 const int NUM_DIRECTIVES = sizeof(DIRECTIVES) / sizeof(DIRECTIVES[0]);
 const int NUM_REGISTERS = sizeof(REGISTERS) / sizeof(REGISTERS[0]);
 const int NUM_MACRO_KEYWORDS = sizeof(MACRO_KEYWORDS) / sizeof(MACRO_KEYWORDS[0]);
+*/

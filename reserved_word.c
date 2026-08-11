@@ -3,7 +3,7 @@
 #include <string.h>
 
 /*returns 1 if the word is an instruction, else returns 0*/
-int is_instruction( char *word) {
+int is_instruction(const char *word) {
     int i;
     const char * const instructions[] = {
         "add", "sub", "and", "or", "nor", "move", "mvhi", "mvlo",
