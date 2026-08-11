@@ -1,0 +1,1 @@
+CFLAGS = -Wall -ansi -pedantic
