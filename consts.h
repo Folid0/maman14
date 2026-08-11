@@ -3,6 +3,8 @@
 
 #define MAX_LINE_LEN 82
 #define Max_MACRO_NAME_LEN 32
+#define Max_FILE_NAME_LEN 256 /*change this. u gotta make it dynamic*/
+
 
 /*arrays with the saved words*/
 extern const char *INSTRUCTIONS[];
