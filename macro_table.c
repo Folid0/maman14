@@ -102,10 +102,16 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
     int word_idx = 0;
 
     int flag = 0; /*0 for loop to run and 1 to break*/
-    while (fgets(cur_line, sizeof(cur_line), input_file_as)!= NULL && flag == 0){
+    while (fgets(cur_line, MAX_LINE_LEN, input_file_as)!= NULL && flag == 0){
         word_idx = 0; /*checking the first word of the line*/
         get_next_word(cur_line, &word_idx, word);
-        if (strcmp(word, "macroend") == 0){ /*macro ended*/
+        word_idx = skip_whitespace(cur_line, word_idx);
+
+        if (strcmp(word, "mcroend") == 0){ /*macro ended*/
+            if (get_next_word(cur_line, &word_idx, word) == 1){ /*there is a word after mcroend*/
+                fprintf(stderr, "Error: Unexpected text after 'mcroend' at line %d.\n", *line_idx);
+                return -1;
+            }
             flag = 1;
         }
         
@@ -148,6 +154,10 @@ int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head) {
     if (cur_word[0] != '\0') { /*if the line is not empty*/
         MacroNode *found_macro = find_macro(mcro_node_head, cur_word);
         if (found_macro != NULL) { /*if the word is a macro name*/
+            if (get_next_word(cur_line, &word_idx, cur_word) == 1) { /*there is a word after the macro name*/
+                fprintf(stderr, "Error: Unexpected text after macro name '%s'.\n", found_macro->name);
+                return -1;
+            }
             if (replace_macro(found_macro, output_file_am) == -1) {
                 fprintf(stderr, "Error replacing macro.\n");
                 return -1;

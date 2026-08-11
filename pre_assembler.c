@@ -84,6 +84,7 @@ int run_pre_assembler(char *file_name){
         fclose(output_file_am);
 
         free_macro_table(mcro_node_head); /*free the mcro list*/
+        remove(file_name_am); /*remove the output file*/
         return -1; /*error*/
     }
 
