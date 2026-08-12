@@ -85,3 +85,55 @@ int is_reserved_word(const char *word){
     }
     return 0;
 }
+
+/*returns 1 if the word is an R-type instruction, 0 otherwise*/
+int is_r_type_instruction(const char *word) {
+    const char * const r_type_instructions[] = {
+
+    "add", "sub", "and", "or", "nor", "move", "mvhi", "mvlo"
+    };
+    int num_r_type_instructions = sizeof(r_type_instructions) / sizeof(r_type_instructions[0]);
+    int i = 0;
+
+    /*checks if the word is one of the R-type instructions*/
+    for (i = 0; i < num_r_type_instructions; i++) {
+        if (strcmp(r_type_instructions[i], word) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/*returns 1 if the word is an I-type instruction, 0 otherwise*/
+int is_i_type_instruction(const char *word) {
+    const char * const i_type_instructions[] = {
+    "addi", "subi", "andi", "ori", "nori", "bne", "beq", "blt", "bgt", "lb", "sb", "lw", "sw", "lh", "sh"    
+    };
+    /*checks if the word is one of the I-type instructions*/
+    int num_i_type_instructions = sizeof(i_type_instructions) / sizeof(i_type_instructions[0]);
+
+    int i = 0;
+    for (i = 0; i < num_i_type_instructions; i++) {
+        if (strcmp(i_type_instructions[i], word) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/*returns 1 if the word is a J-type instruction, 0 otherwise*/
+int is_j_type_instruction(const char *word) {
+    const char * const j_type_instructions[] = {
+    "jmp", "la", "call", "hlt"
+    };
+    int num_j_type_instructions = sizeof(j_type_instructions) / sizeof(j_type_instructions[0]);
+
+    int i = 0;
+    /*checks if the word is one of the J-type instructions*/
+    for (i = 0; i < num_j_type_instructions; i++) {
+        if (strcmp(j_type_instructions[i], word) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}

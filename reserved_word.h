@@ -13,5 +13,14 @@ int is_register(const char *word);
 
 int is_macro_keyword(const char *word);
 
+/*returns 1 if the word is an R-type instruction, 0 otherwise*/
+int is_r_type_instruction(const char *word);
+
+/*returns 1 if the word is an I-type instruction, 0 otherwise*/
+int is_i_type_instruction(const char *word);
+
+/*returns 1 if the word is a J-type instruction, 0 otherwise*/
+int is_j_type_instruction(const char *word);
+
 #endif /* RESERVED_WORD_H */
 

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -ansi -pedantic -std=c99
+CFLAGS = -Wall -ansi -pedantic -std=c89
 TARGET = assembler
 OBJS = main.o consts.o macro_table.o pre_assembler.o reserved_word.o utils.o
 

@@ -130,12 +130,12 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
 /* Replace a macro with its lines in the output file */
 /*returns 0 if successful, -1 if an error occurs*/
 int replace_macro(MacroNode *macro, FILE *output_file_am) {
+    LineNode *cur_line_node = macro->lines_head;
     if (macro == NULL) {
         fprintf(stderr, "Macro node is NULL.\n");
         return -1; /*macro node is NULL*/
     }
 
-    LineNode *cur_line_node = macro->lines_head;
     while (cur_line_node != NULL) {
         fputs(cur_line_node->line, output_file_am);
         cur_line_node = cur_line_node->next;

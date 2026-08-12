@@ -1,4 +1,7 @@
 #include "consts.h"
+int something_tmp_remove_this_there_is_an_erro () {
+    return 0;
+}
 
 /*
 const char *INSTRUCTIONS[] = {
