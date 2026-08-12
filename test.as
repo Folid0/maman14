@@ -1,5 +1,9 @@
-mcro        MACROONE         
-      add $1, $2, $3
- mcroend    
+mcro FINAL_MAC
 
-      MACROONE sdfsdf
+
+
+hlt
+mcroend
+
+add $1, $2, $3
+FINAL_MAC

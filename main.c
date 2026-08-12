@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     */    
 
     run_pre_assembler("test");
-
+    
 
     return 0;
 }

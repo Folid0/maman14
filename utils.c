@@ -76,15 +76,15 @@ int check_set_mcro(char *line, char* name){
         }
 
         for (i = 1; word[i] != '\0' && word[i] != '\n'; i++) { /*checks if the name contains only alphanumeric characters*/
-            if (!isalnum(word[i])) {
-                fprintf(stderr, "Error: Macro name must contain only alphanumeric characters.\n");  
-                return -1; /* Macro name must contain only alphanumeric characters */;
+            if (!isalnum(word[i]) && word[i] != '_') {
+                fprintf(stderr, "Error: Macro name must contain only alphanumeric characters or underscores.\n");
+                return -1; /* Macro name must contain only alphanumeric characters or underscores */;
             }
         }
 
         /*sets the name*/
         strcpy(name, word);
-        
+
         if (get_next_word(line, &word_idx, word) == 1){ /*the name has a white space or illegal character*/
             fprintf(stderr, "Error: Macro name must be a single word.\n");
             return -1;

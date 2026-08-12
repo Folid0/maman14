@@ -166,6 +166,9 @@ int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head) {
             fputs(cur_line, output_file_am);
         }
     }
+    else{
+        fputs(cur_line, output_file_am); /*put empty line*/
+    }
 
     return 0; 
 }
