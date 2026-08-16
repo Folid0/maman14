@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "consts.h"
 #include "utils.h"
 #include "data_table.h"
 #include "reserved_word.h"
+#include "first_pass.h"
 
 int handle_label(char *line, AssemblerData *data, int line_idx) {
     char label_name[Max_SYMBOL_NAME_LEN];
-    char *word[MAX_LINE_LEN];
+    /* char *word[MAX_LINE_LEN]; */
     int word_idx = 0;
     LabelType type;
 
@@ -22,7 +24,7 @@ int handle_label(char *line, AssemblerData *data, int line_idx) {
     }
 
     get_next_word(line, &word_idx, label_name); /* Move to the next word after the label */
-    type = get_label_type(get_next_word(line, &word_idx, label_name)); /*setting type*/
+    type = get_label_type(label_name); /*setting type*/
 
 
     switch (type) {
@@ -66,13 +68,14 @@ LabelType get_label_type(const char *word) {
 /*returns 1 if the word is a label, 0 otherwise*/
 int is_label(const char *word) {
     int len = strlen(word);
+    int i;
     if (len == 0 || len > Max_SYMBOL_NAME_LEN) {
         return 0; /* Not a label */
     }
     if (!isalpha(word[0])) {
         return 0; /* Must start with a letter */
     }
-    for (int i = 1; i < len-1; i++) {
+    for (i = 1; i < len-1; i++) {
         if (!isalnum(word[i])) {
             return 0; /* Must be alphanumeric*/
         }
@@ -99,6 +102,7 @@ int should_skip_line(char *line) {
 
     return 0; /* Line should not be skipped */
 }
+
 int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
     int word_idx = 0;
     char *word [MAX_LINE_LEN];

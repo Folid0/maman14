@@ -1,7 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -ansi -pedantic -std=c89
 TARGET = assembler
-OBJS = main.o consts.o macro_table.o pre_assembler.o reserved_word.o utils.o
+
+# Automatically find all .c files in the directory
+SRCS = $(wildcard *.c)
+
+# Convert all .c filenames to .o filenames
+OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 all: $(TARGET)
 

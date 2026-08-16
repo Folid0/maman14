@@ -97,8 +97,26 @@ int check_set_mcro(char *line, char* name){
     else{
         return 0;
     }
+}
 
+/*change comma to whitespace, dosent remove 2 commas in a row (will only replace one)*/
+/*returns 1 if successful, -1 if error*/
+int change_single_comma_to_whitespace(char *line){
+    int len = strlen(line);
 
+    char last = '\0';
+
+    int i;
+    for (i = 0; i < len; i++) {
+        if (line[i] == ',' && last != ',') {
+            return -1; /*there is a double comma*/
+        } else {
+            last = line[i];
+        } 
+    }
+    
+    
+    return 1; /* No comma to remove */
 }
 
 
