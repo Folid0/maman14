@@ -45,6 +45,46 @@ int get_next_word(char *line, int *index, char *word){
     return 1;
 }
 
+
+/*puts the next word into word, returns 1 if there was a word and 0 if there is no word, stops at the next word*/
+/*a word has to be devided by a comma*/
+/*index is at the end of the word*/
+int get_next_command(char *line, int *index, char *word){
+    int i = *index;
+    int j = 0;
+
+    i = skip_whitespace(line, *index);
+
+    /*if there is no word*/
+    if (line[i] == '\0' || line[i] == '\n' || line[i] == ',') {
+        word[0] = '\0';
+        *index = i;
+        return 0;
+    }
+
+    /*set the word*/
+    while (line[i] != ',' && line[i] != '\t' && line[i] != '\0'
+         && line[i] != '\n' && j <MAX_LINE_LEN - 1){
+        if (word[j] != ' '){
+            word[j] = line[i];
+            j++;
+        }
+
+        
+        i++;
+    }
+    
+    if (line[i] == ',') {
+        /*if the next last is a comma, skip it*/
+        i++;
+    }
+    
+
+    word[j] = '\0';
+    *index = i;
+    return 1;
+}
+
 /*checks if its a mcro and then puts the name of the mcro into name*/
 /*returns 0 if not mcro and 1 if mcro*/
 /*returns -1 if there is an error*/
@@ -99,6 +139,7 @@ int check_set_mcro(char *line, char* name){
     }
 }
 
+
 /*change comma to whitespace, dosent remove 2 commas in a row (will only replace one)*/
 /*returns 1 if successful, -1 if error*/
 int change_single_comma_to_whitespace(char *line){
@@ -119,4 +160,20 @@ int change_single_comma_to_whitespace(char *line){
     return 1; /* No comma to remove */
 }
 
+/*returns 1 if its only digits, 0 otherwise */
+int is_strictly_digits(const char *str) {
+    if (str == NULL || *str == '\0') {
+        /*check for empty words*/
+        return 0;
+    }
 
+    while (*str != '\0' && *str != '\n') {
+        /* Cast to unsigned char to avoid undefined behavior with negative values */
+        if (!isdigit((unsigned char)*str)) {
+            return 0;
+        }
+        str++;
+    }
+
+    return 1;
+}

@@ -15,4 +15,12 @@ int check_set_mcro(char *line, char* name);
 /*change comma to whitespace, dosent remove 2 commas in a row (will only replace one)*/
 /*returns 1 if successful, -1 if error*/
 int change_single_comma_to_whitespace(char *line);
+
+
+/*puts the next word into word, returns 1 if there was a word and 0 if there is no word, stops at the next word*/
+/*a word has to be devided by a comma*/
+/*index is at the end of the word*/
+int get_next_command(char *line, int *index, char *word);
+int is_strictly_digits(const char *str);
+
 #endif /* UTILS_H */

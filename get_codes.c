@@ -9,10 +9,11 @@
 #include "writing_to_binary.h"
 
 int get_register_num(char *name) {
+    int reg_num;
     if (name[0] != '$') {
         return -1; /* Not a register */
     }
-    int reg_num = atoi(name + 1); /* Convert the number part to an integer */
+    reg_num = atoi(name + 1); /* Convert the number part to an integer */
     if (reg_num < 0 || reg_num > 31) {
         return -1; /* Invalid register number */
     }

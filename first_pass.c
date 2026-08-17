@@ -105,7 +105,7 @@ int should_skip_line(char *line) {
 
 int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
     int word_idx = 0;
-    char *word [MAX_LINE_LEN];
+    char word [MAX_LINE_LEN];
     
 
     /* Check if the line should be skipped */
@@ -113,7 +113,8 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
         return 0; /* Skip this line */
     }
 
-    if (is_label(get_next_word(line, &word_idx, word)) == 1) {
+    get_next_word(line, &word_idx, word);
+    if (is_label(word) == 1) {
         /* Handle label */
         /* Add label to symbol table with current IC or DC */
         /* Update word_idx to point to the next word after the label */
@@ -123,7 +124,7 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
 
 
 
-    
+    return 2;
 }
 
 

@@ -43,41 +43,37 @@ int run_pre_assembler(char *file_name){
     }
     
     while (fgets(cur_line, sizeof(cur_line), input_file_as) != NULL){
-        if (change_single_comma_to_whitespace(cur_line) == -1){ /*if there are 2 or more commas in a row*/
-            fprintf(stderr, "Error changing comma to whitespace at line: %d\n", line_idx);
+
+        is_mcro_val = check_set_mcro(cur_line, mcro_name);
+        if (is_mcro_val == -1){
+            /*there is an error with the mcro*/
+            fprintf(stderr, "mcro Errror at line: %d ", line_idx);
             error_flag = 1;
         }
-        else{
-            is_mcro_val = check_set_mcro(cur_line, mcro_name);
-            if (is_mcro_val == -1){
-                /*there is an error with the mcro*/
-                fprintf(stderr, "mcro Errror at line: %d ", line_idx);
+        else if(is_mcro_val == 1 && error_flag == 0){ /*its a mcro and there is no error*/
+            if (add_macro(&mcro_node_head, mcro_name) == -1){
+                fprintf(stderr, "memmory allocation ERROR");
                 error_flag = 1;
             }
-            else if(is_mcro_val == 1 && error_flag == 0){ /*its a mcro and there is no error*/
-                if (add_macro(&mcro_node_head, mcro_name) == -1){
-                    fprintf(stderr, "memmory allocation ERROR");
-                    error_flag = 1;
-                }
-                else{ /*no problem with adding macro to the list*/
-                    if (error_flag == 0){
-                        if (add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx) == -1){
-                            fprintf(stderr, "memmory allocation ERROR");
-                            error_flag = 1;
-                        }
+            else{ /*no problem with adding macro to the list*/
+                if (error_flag == 0){
+                    if (add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx) == -1){
+                        fprintf(stderr, "memmory allocation ERROR");
+                        error_flag = 1;
                     }
                 }
             }
-            else if (is_mcro_val == 0 && error_flag == 0){ /*its not a mcro and there is no error*/
-                if (put_line(output_file_am, cur_line, mcro_node_head) == -1){
-                    fprintf(stderr, "Error putting line to output file at line: %d", line_idx);
-                    error_flag = 1;
-                }
+        }
+        else if (is_mcro_val == 0 && error_flag == 0){ /*its not a mcro and there is no error*/
+            if (put_line(output_file_am, cur_line, mcro_node_head) == -1){
+                fprintf(stderr, "Error putting line to output file at line: %d", line_idx);
+                error_flag = 1;
             }
+        }
     }
 
         line_idx++;
-    }
+    
 
 
 
