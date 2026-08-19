@@ -10,13 +10,16 @@
 typedef enum{
     CODE,
     DATA,
-    EXTERN
+    EXTERN,
+    ENTRY /*if entry and another type are both on the same sybol than we choose the other type here
+     and we will know its also entry by the is_entry flag */
 } LabelType;
 
 typedef struct LabelNode {
     char name[MAX_SYMBOL_NAME_LEN];
     long address;
     LabelType type;
+    int is_entry;
     struct LabelNode *next;
 } LabelNode;
 
@@ -26,14 +29,14 @@ typedef struct {
     unsigned char data_image[MAX_MEM_SIZE];
     int IC;
     int DC;
-    int is_entry;
     LabelNode *label_head;
     int error_flag;
 } AssemblerData;
 
-int process_line_first_pass(char *line, AssemblerData *data, int line_idx);
 int should_skip_line(char *line);
 int add_label(LabelNode **head, char *name, int address, LabelType type);
+int is_label(const char *word);
 LabelType get_label_type(const char *word);
+LabelNode* find_label(LabelNode *head, const char *name);
 
 #endif /* SYMBOL_TABLE_H */

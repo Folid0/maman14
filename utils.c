@@ -6,7 +6,7 @@
 #include "consts.h"
 #include "utils.h"
 #include "reserved_word.h"
-
+#include "data_table.h"
 
 /*returns the index of the first non-whitespace character from the given index*/
 int skip_whitespace(char *line, int index){
@@ -88,7 +88,7 @@ int get_next_command(char *line, int *index, char *word){
 /*checks if its a mcro and then puts the name of the mcro into name*/
 /*returns 0 if not mcro and 1 if mcro*/
 /*returns -1 if there is an error*/
-int check_set_mcro(char *line, char* name){
+int get_macro_initialization_name_from_line(char *line, char* name){
     char word[MAX_LINE_LEN];
     int word_idx = 0;
     int i = 0;
@@ -176,4 +176,18 @@ int is_strictly_digits(const char *str) {
     }
 
     return 1;
+}
+
+/*returns 1 if a label is found and extracted, -1 otherwise*/
+int get_label_name(char *line, int *word_idx, char *label_name) {
+    if (get_next_word(line, word_idx, label_name) == 0) {
+        return -1; /* No label found */
+    }
+
+    if (is_label(label_name) == 1) {
+        label_name[strlen(label_name) - 1] = '\0'; /* Remove the trailing ':' */
+        return 1;
+    }
+
+    return -1; /* Error */
 }

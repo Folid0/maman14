@@ -9,67 +9,10 @@
 #include "reserved_word.h"
 #include "first_pass.h"
 #include "writing_to_binary.h"
-
-int handle_label(char *line, AssemblerData *data, int line_idx) {
-    char label_name[MAX_SYMBOL_NAME_LEN];
-    /* char *word[MAX_LINE_LEN]; */
-    int word_idx = 0;
-    LabelType type;
-
-    label_name[0] = '\0'; /* Initialize label_name to an empty string */
-
-    /* setting label name */
-    if (get_next_word(line, &word_idx, label_name) == 0) {
-        fprintf(stderr, "Error: Failed to extract label name at line %d.\n", line_idx);
-        return -1;
-    }
-
-    get_next_word(line, &word_idx, label_name); /* Move to the next word after the label */
-    type = get_label_type(label_name); /*setting type*/
-
-
-    switch (type) {
-        case CODE:
-            /* Handle code label */
-            break;
-        case DATA:
-            /* Handle data label */
-            break;
-        case EXTERN:
-            /* Handle extern label */
-            break;
-        default:
-            fprintf(stderr, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
-            return -1; /* Unknown label type */
-    }
-
-    return 0; /* Successfully handled the label */
-}
-
-/*gets the second word from the line declaring a label and returns its type*/
+#include "macro_table.h"
     
 
-/*returns 1 if the word is a label, 0 otherwise*/
-int is_label(const char *word) {
-    int len = strlen(word);
-    int i;
-    if (len == 0 || len > MAX_SYMBOL_NAME_LEN) {
-        return 0; /* Not a label */
-    }
-    if (!isalpha(word[0])) {
-        return 0; /* Must start with a letter */
-    }
-    for (i = 1; i < len-1; i++) {
-        if (!isalnum(word[i])) {
-            return 0; /* Must be alphanumeric*/
-        }
-    }
-    if (word[len - 1] != ':') {
-        return 0; /* Must end with : */
-    }
 
-    return 1; /* Valid label */
-}
 
 /*returns 1 if the line should be skipped, 0 otherwise*/
 int should_skip_line(char *line) {
@@ -87,7 +30,9 @@ int should_skip_line(char *line) {
     return 0; /* Line should not be skipped */
 }
 
-int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
+
+/*returns 1 if there was a line to process, 0 if skipped, -1 if error*/
+int process_line_first_pass(char *line, AssemblerData *data, int line_idx, MacroNode *macro_head) {
     int word_idx = 0;
     char word [MAX_LINE_LEN];
     
@@ -97,15 +42,11 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
         return 0; /* Skip this line */
     }
 
-    get_next_word(line, &word_idx, word);
+    get_next_word(line, &word_idx, word);/*gettign the first word in the line*/
     if (is_label(word) == 1) {
-        /* Handle label */
-        /* Add label to symbol table with current IC or DC */
-        /* Update word_idx to point to the next word after the label */
+        return handle_label(line, data, line_idx, macro_head); /*returns 1 if successful, -1 if error*/
     }
     else {
-        /* Handle instruction or directive */
-        /* Update IC or DC based on the instruction or directive */
         word_idx = 0; /* Reset word_idx to start reading the line again */
         if (is_instruction(word) == 1) {
             return handle_CODE(line, &word_idx, data);
@@ -133,7 +74,7 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
 
 
 /*returns 1 if successful, -1 if there was an error*/
-int run_first_pass(FILE *am_file, AssemblerData *data) {
+int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
     char cur_line[MAX_LINE_LEN];
     int line_idx = 0;
 
@@ -145,7 +86,7 @@ int run_first_pass(FILE *am_file, AssemblerData *data) {
 
     while (fgets(cur_line, sizeof(cur_line), am_file) != NULL) {
         /* Process the current line */
-        if (process_line_first_pass(cur_line, data, line_idx) == -1) {
+        if (process_line_first_pass(cur_line, data, line_idx, macro_head) == -1) {
             fprintf(stderr, "Error processing line %d.\n", line_idx);
             data->error_flag = 1; /* Set error flag */
         }

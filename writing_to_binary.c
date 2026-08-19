@@ -9,7 +9,7 @@
 #include "reserved_word.h"
 #include "writing_to_binary.h"
 #include "get_codes.h"
-#include "writing_to_binary.h"
+#include "macro_table.h"
 
 /*writes the line in binary to the data*/
 /*word idx is on the name of the command (ussaly the first word or seccond if there is a label)*/
@@ -411,7 +411,11 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
     LabelNode *tmp;
     int skip = 0;
 
-    get_next_word(line, word_idx, name); /*getting the idx of the seccond word, which is the label name*/
+    if(get_next_word(line, word_idx, name) == 0 && strcmp(name, ".extern") != 0) { /*getting the idx of the first word, which is the command name*/
+        fprintf(stderr, "Error: Missing command for .extern directive\n");
+        data->error_flag = 1;
+        return -1;
+    }
     /*get label name*/
     if (get_next_word(line, word_idx, label_name) == 0) {
         fprintf(stderr, "Error: Missing label for .extern directive\n");
@@ -465,7 +469,13 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
 int handle_entry_directive_first_pass(char *line, int *word_idx, char *name, AssemblerData *data) {
     char label_name[MAX_LINE_LEN];
     char extra[MAX_LINE_LEN];
-    get_next_word(line, word_idx, name); /*getting the idx of the seccond word, which is the label name*/
+    LabelNode *tmp_label;
+
+    if(get_next_word(line, word_idx, name) == 0 && strcmp(name, ".entry") != 0) { /*getting the idx of the first word, which is the command name*/
+        fprintf(stderr, "Error: Missing command for .entry directive\n");
+        data->error_flag = 1;
+        return -1;
+    }
 
     /*get label name*/
     if (get_next_word(line, word_idx, label_name) == 0) {
@@ -481,6 +491,16 @@ int handle_entry_directive_first_pass(char *line, int *word_idx, char *name, Ass
         return -1;
     }
 
+    tmp_label = find_label(data->label_head, label_name); /*make sure the label dosnt already exist as extern*/
+    if (tmp_label != NULL) {
+        if (tmp_label->type == EXTERN) {
+            fprintf(stderr, "Error: Label '%s' defined as .extern cannot be marked as .entry\n", label_name);
+            data->error_flag = 1;
+            return -1;
+        }
+    } 
+
+
     /* Check for trailing garbage text */
     if (get_next_word(line, word_idx, extra) != 0) {
         fprintf(stderr, "Error: text after .entry directive\n");
@@ -489,4 +509,70 @@ int handle_entry_directive_first_pass(char *line, int *word_idx, char *name, Ass
     }
 
     return 1;
+}
+
+
+/*return 1 if the label was handled successfully, -1 otherwise*/
+int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro_head) {
+    char label_name[MAX_SYMBOL_NAME_LEN];
+    /* char *word[MAX_LINE_LEN]; */
+    int word_idx = 0;
+    int command_idx = 0;
+    LabelType type;
+    char command_name[MAX_LINE_LEN];
+    label_name[0] = '\0'; /* Initialize label_name to an empty string */
+
+    /* setting label name */
+    if (get_label_name(line, &word_idx, label_name) == -1) {
+        fprintf(stderr, "Error: Invalid label name at line %d.\n", line_idx);
+        return -1;
+    }
+    
+
+    if (find_macro(macro_head, label_name) != NULL) {
+        fprintf(stderr, "Error: Label '%s' is already defined as a macro at line %d.\n", label_name, line_idx);
+        return -1;
+    }
+    command_idx = word_idx; /*the index after the label name*/
+    get_next_word(line, &word_idx, command_name); /* Move to the next word after the label */
+    type = get_label_type(command_name); /*setting type*/
+
+    if (find_label(data->label_head, label_name) != NULL) { /* Check if the label already exists in the symbol table */
+        fprintf(stderr, "Error: Label '%s' is already defined at line %d.\n", label_name, line_idx);
+        return -1;
+    }
+
+    switch (type) {
+        case CODE:
+            if (add_label(&data->label_head, label_name, data->IC, CODE) == -1 || handle_CODE(line, &command_idx, data) == -1){
+                fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
+                return -1;
+            }
+            break;
+        case DATA:
+            if (add_label(&data->label_head, label_name, data->DC, DATA) == -1 || handle_data_directive(line, &command_idx, data) == -1){
+                fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
+                return -1;
+            }
+            break;
+        case EXTERN:
+            /*igonore the label as there is no meaning*/
+            if (encode_extern_directive(line, &command_idx, command_name, data) == -1) {
+                fprintf(stderr, "Error: Failed to handle extern directive for label '%s' at line %d.\n", label_name, line_idx);
+                return -1;
+            }
+            break;
+        case ENTRY:
+            /*ignore the label as there is no meaning*/
+            if (handle_entry_directive_first_pass(line, &command_idx, command_name, data) == -1) {
+                fprintf(stderr, "Error: Failed to handle entry directive for label '%s' at line %d.\n", label_name, line_idx);
+                return -1;
+            }
+            break;
+        default:
+            fprintf(stderr, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
+            return -1; /* Unknown label type */
+    }
+
+    return 1; /* Successfully handled the label */
 }

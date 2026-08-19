@@ -9,7 +9,7 @@
 #include "reserved_word.h"
 
 /*returns 0 if error occurred, 1 if successful*/
-int run_pre_assembler(char *file_name){
+int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
     char file_name_as[MAX_FILE_NAME_LEN];
     char file_name_am[MAX_FILE_NAME_LEN];
     int error_flag = 0; /*1 if there is an error*/
@@ -44,7 +44,7 @@ int run_pre_assembler(char *file_name){
     
     while (fgets(cur_line, sizeof(cur_line), input_file_as) != NULL){
 
-        is_mcro_val = check_set_mcro(cur_line, mcro_name);
+        is_mcro_val = get_macro_initialization_name_from_line(cur_line, mcro_name);
         if (is_mcro_val == -1){
             /*there is an error with the mcro*/
             fprintf(stderr, "mcro Errror at line: %d ", line_idx);
@@ -93,7 +93,13 @@ int run_pre_assembler(char *file_name){
     fclose(input_file_as);
     fclose(output_file_am);
 
-    free_macro_table(mcro_node_head); /*free the mcro list*/
+    *macro_head_ret = mcro_node_head; /*setting the head of the ret node to the head of the macro list*/
 
+    /*
+
+    free_macro_table(mcro_node_head); 
+
+    */
+   
     return 1; /*successful*/
 }

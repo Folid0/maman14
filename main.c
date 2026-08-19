@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
     AssemblerData data;
     FILE *am_file;
     int i;
-    
-    run_pre_assembler("test");
+    MacroNode *macro_head = NULL; /* Initialize macro_head to NULL */
+    run_pre_assembler("test", &macro_head);
 
     am_file = fopen("test.am", "r");
     /*
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     memset(data.data_image, 0, sizeof(data.data_image));
 
 
-    printf("%d\n", run_first_pass(am_file, &data));
+    printf("%d\n", run_first_pass(am_file, &data, macro_head));
     
     fclose(am_file);
 
@@ -69,5 +69,7 @@ int main(int argc, char *argv[]) {
         }
     }
     printf("\n");
+
+    free_macro_list(macro_head); /* Free the macro list after use */
     return 0;
 }

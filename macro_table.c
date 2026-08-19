@@ -151,6 +151,7 @@ int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head) {
     int word_idx = 0;
 
     get_next_word(cur_line, &word_idx, cur_word);
+    
     if (cur_word[0] != '\0') { /*if the line is not empty*/
         MacroNode *found_macro = find_macro(mcro_node_head, cur_word);
         if (found_macro != NULL) { /*if the word is a macro name*/

@@ -1,19 +1,11 @@
-.extern ext_lbl
-.entry ent_lbl
+; test_err3.as - Range overflows and reserved names
+mcro add
+    move    $1, $2
+mcroend
 
-    add $3, $5, $9
-    sub $1, $2, $3
-    move $20, $4
+add:        addi    $0, 40000, $1
+            subi    $1, -35000, $2
+            hlt
 
-    addi $9, -45, $8
-    ori $9, -5, $2
-    lw $7, 12, $5
-    sb $1, 0, $2
-
-    jmp $4
-    hlt
-
-.db 6, -9, 15
-.dh 27056, -123
-.dw 31, -12, 0
-.asciz "test"
+OVERFLOWS:  .db     256
+            .dh     70000
