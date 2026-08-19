@@ -8,9 +8,10 @@
 #include "data_table.h"
 #include "reserved_word.h"
 #include "first_pass.h"
+#include "writing_to_binary.h"
 
 int handle_label(char *line, AssemblerData *data, int line_idx) {
-    char label_name[Max_SYMBOL_NAME_LEN];
+    char label_name[MAX_SYMBOL_NAME_LEN];
     /* char *word[MAX_LINE_LEN]; */
     int word_idx = 0;
     LabelType type;
@@ -34,9 +35,6 @@ int handle_label(char *line, AssemblerData *data, int line_idx) {
         case DATA:
             /* Handle data label */
             break;
-        case ENTRY:
-            /* Handle entry label */
-            break;
         case EXTERN:
             /* Handle extern label */
             break;
@@ -49,27 +47,13 @@ int handle_label(char *line, AssemblerData *data, int line_idx) {
 }
 
 /*gets the second word from the line declaring a label and returns its type*/
-LabelType get_label_type(const char *word) {
-
-
-    if (is_instruction(word)) {
-        return CODE;
-    } else if (is_directive(word)) {
-        return DATA;
-    } else if (is_reserved_word(word)) {
-        return ENTRY;
-    } else if (is_register(word)) {
-        return EXTERN;
-    } else {
-        return -1; /* Invalid label type */
-    }
-}
+    
 
 /*returns 1 if the word is a label, 0 otherwise*/
 int is_label(const char *word) {
     int len = strlen(word);
     int i;
-    if (len == 0 || len > Max_SYMBOL_NAME_LEN) {
+    if (len == 0 || len > MAX_SYMBOL_NAME_LEN) {
         return 0; /* Not a label */
     }
     if (!isalpha(word[0])) {
@@ -109,7 +93,7 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
     
 
     /* Check if the line should be skipped */
-    if (should_skip_line(line)) {
+    if (should_skip_line(line) == 1) {
         return 0; /* Skip this line */
     }
 
@@ -118,13 +102,33 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx) {
         /* Handle label */
         /* Add label to symbol table with current IC or DC */
         /* Update word_idx to point to the next word after the label */
-
-
+    }
+    else {
+        /* Handle instruction or directive */
+        /* Update IC or DC based on the instruction or directive */
+        word_idx = 0; /* Reset word_idx to start reading the line again */
+        if (is_instruction(word) == 1) {
+            return handle_CODE(line, &word_idx, data);
+        }
+        else if (is_data_directive(word) == 1) {
+            return handle_data_directive(line, &word_idx, data);
+        }
+        else if(strcmp(word, ".extern") == 0) { /*check if the word is .extern*/
+            return encode_extern_directive(line, &word_idx, word, data);
+        }
+        else if(strcmp(word, ".entry") == 0) { /*check if the word is .entry*/
+            return handle_entry_directive_first_pass(line, &word_idx, word, data);
+        }
+        else {
+            fprintf(stderr, "Error: Unknown instruction or directive '%s' at line %d.\n", word, line_idx);
+            data->error_flag = 1;
+            return -1; /* Unknown instruction or directive */
+        }
     }
 
 
 
-    return 2;
+    return 1; /* Successfully processed the line */
 }
 
 

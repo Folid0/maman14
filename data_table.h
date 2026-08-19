@@ -10,12 +10,11 @@
 typedef enum{
     CODE,
     DATA,
-    ENTRY,
     EXTERN
 } LabelType;
 
 typedef struct LabelNode {
-    char name[Max_SYMBOL_NAME_LEN];
+    char name[MAX_SYMBOL_NAME_LEN];
     long address;
     LabelType type;
     struct LabelNode *next;
@@ -27,11 +26,14 @@ typedef struct {
     unsigned char data_image[MAX_MEM_SIZE];
     int IC;
     int DC;
+    int is_entry;
     LabelNode *label_head;
     int error_flag;
 } AssemblerData;
 
 int process_line_first_pass(char *line, AssemblerData *data, int line_idx);
 int should_skip_line(char *line);
+int add_label(LabelNode **head, char *name, int address, LabelType type);
+LabelType get_label_type(const char *word);
 
 #endif /* SYMBOL_TABLE_H */

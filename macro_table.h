@@ -10,7 +10,7 @@ typedef struct LineNode {
 
 /* Macro node for storing each macro */
 typedef struct MacroNode {
-    char name[Max_MACRO_NAME_LEN];
+    char name[MAX_MACRO_NAME_LEN];
     LineNode *lines_head;
     LineNode *lines_tail;
     struct MacroNode *next;

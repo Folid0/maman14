@@ -10,15 +10,15 @@
 
 /*returns 0 if error occurred, 1 if successful*/
 int run_pre_assembler(char *file_name){
-    char file_name_as[Max_FILE_NAME_LEN];
-    char file_name_am[Max_FILE_NAME_LEN];
+    char file_name_as[MAX_FILE_NAME_LEN];
+    char file_name_am[MAX_FILE_NAME_LEN];
     int error_flag = 0; /*1 if there is an error*/
     int is_mcro_val;
     char cur_line[MAX_LINE_LEN];
     FILE *input_file_as;
     FILE *output_file_am;
     int line_idx = 0;
-    char mcro_name[Max_MACRO_NAME_LEN];
+    char mcro_name[MAX_MACRO_NAME_LEN];
 
     MacroNode *mcro_node_head = NULL; /*pointer to head of the macro list*/
 

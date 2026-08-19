@@ -15,8 +15,8 @@ int add_macro(MacroNode **head, char *name) {
         return -1; /*memory allocation failed*/
     }
     /* Initialize the new macro node */
-    strncpy(new_node->name, name, Max_MACRO_NAME_LEN);
-    new_node->name[Max_MACRO_NAME_LEN - 1] = '\0'; /* Ensure correct termination */
+    strncpy(new_node->name, name, MAX_MACRO_NAME_LEN);
+    new_node->name[MAX_MACRO_NAME_LEN - 1] = '\0'; /* Ensure correct termination */
     new_node->lines_head = NULL;
     new_node->lines_tail = NULL;
     new_node->next = NULL;

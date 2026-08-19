@@ -9,6 +9,8 @@ int is_instruction(const char *word);
 
 int is_directive(const char *word);
 
+int is_data_directive(const char *word);
+
 int is_register(const char *word);
 
 int is_macro_keyword(const char *word);

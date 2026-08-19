@@ -40,6 +40,24 @@ int is_directive(const char *word) {
     return 0;
 }
 
+/*returns 1 if the word is a data directive, else returns 0*/
+/*".db", ".dh", ".dw", ".asciz"*/
+int is_data_directive(const char *word) {
+    int i;
+    int num_data_directives;
+    const char * const data_directives[] = {
+        ".db", ".dh", ".dw", ".asciz"
+    };
+    num_data_directives = sizeof(data_directives) / sizeof(data_directives[0]);
+
+    for (i = 0; i < num_data_directives; i++) {
+        if (strcmp(data_directives[i], word) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /*returns 1 if the word is a register, else returns 0*/
 int is_register(const char *word) {
     int i;
