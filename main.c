@@ -70,6 +70,6 @@ int main(int argc, char *argv[]) {
     }
     printf("\n");
 
-    free_macro_list(macro_head); /* Free the macro list after use */
+    free_macro_table(macro_head); /* Free the macro list after use */
     return 0;
 }

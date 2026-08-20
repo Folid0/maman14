@@ -171,6 +171,8 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
         return -1;
     }
 
+    
+
     machine_code |= (rs << 21);
     machine_code |= (rt << 16);
     machine_code |= (immed & 0xFFFF);
@@ -399,6 +401,12 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
                 }
             }
     }
+    }
+
+    if (state == 0) {
+        fprintf(stderr, "Error: trailing comma without a number\n");
+        data->error_flag = 1; 
+        return -1;
     }
     return 1;
 }

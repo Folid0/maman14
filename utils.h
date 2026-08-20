@@ -25,4 +25,6 @@ int get_next_command(char *line, int *index, char *word);
 int is_strictly_digits(const char *str);
 int get_label_name(char *line, int *word_idx, char *label_name);
 
+void flush_line(FILE *fp);
+
 #endif /* UTILS_H */

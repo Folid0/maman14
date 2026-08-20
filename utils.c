@@ -191,3 +191,12 @@ int get_label_name(char *line, int *word_idx, char *label_name) {
 
     return -1; /* Error */
 }
+
+
+/*flushes the rest of the line*/
+void flush_line(FILE *fp) {
+    int ch;
+    while ((ch = fgetc(fp)) != '\n' && ch != EOF) {
+        /* discard characters */
+    }
+}

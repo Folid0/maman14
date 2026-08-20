@@ -85,13 +85,20 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
     data->error_flag = 0;
 
     while (fgets(cur_line, sizeof(cur_line), am_file) != NULL) {
-        /* Process the current line */
-        if (process_line_first_pass(cur_line, data, line_idx, macro_head) == -1) {
-            fprintf(stderr, "Error processing line %d.\n", line_idx);
-            data->error_flag = 1; /* Set error flag */
+        if (strchr(cur_line, '\n') == NULL && !feof(am_file)) {
+            fprintf(stderr, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
+                    line_idx + 1, MAX_LINE_LEN);
+            data->error_flag = 1;
+            /* Skip the rest of the line to avoid processing it */
+            flush_line(am_file);
         }
-
-
+        else{  
+            /* Process the current line */
+            if (process_line_first_pass(cur_line, data, line_idx, macro_head) == -1) {
+                fprintf(stderr, "Error processing line %d.\n", line_idx);
+                data->error_flag = 1; /* Set error flag */
+            }
+        }
         line_idx++;
     }
 
