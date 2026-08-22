@@ -102,7 +102,8 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
     int word_idx = 0;
 
     int flag = 0; /*0 for loop to run and 1 to break*/
-    while (fgets(cur_line, MAX_LINE_LEN, input_file_as)!= NULL && flag == 0){
+    while (flag == 0 && fgets(cur_line, MAX_LINE_LEN, input_file_as)!= NULL){
+        (*line_idx)++;
         word_idx = 0; /*checking the first word of the line*/
         get_next_word(cur_line, &word_idx, word);
         word_idx = skip_whitespace(cur_line, word_idx);
@@ -121,7 +122,6 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
                 return -1;
             }
         }
-        (*line_idx)++;
     }
 
     return 0;

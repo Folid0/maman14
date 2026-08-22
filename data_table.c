@@ -2,6 +2,7 @@
 #include "reserved_word.h"
 #include "writing_to_binary.h"
 #include "consts.h"
+#include "utils.h"
 
 #include <ctype.h>
 
@@ -49,6 +50,7 @@ LabelType get_label_type(const char *word) {
 int is_label(const char *word) {
     int len = strlen(word);
     int i;
+    char copy_word[MAX_SYMBOL_NAME_LEN];
     if (len == 0 || len > MAX_SYMBOL_NAME_LEN) {
         return 0; /* Not a label */
     }
@@ -62,6 +64,12 @@ int is_label(const char *word) {
     }
     if (word[len - 1] != ':') {
         return 0; /* Must end with : */
+    }
+    
+    strncpy(copy_word, word, len - 1);
+    copy_word[len - 1] = '\0'; /*remove the trailing ":"*/
+    if (is_reserved_word(copy_word) == 1) {
+        return 0; /* Cannot be a reserved word */
     }
 
     return 1; /* Valid label */
@@ -77,4 +85,38 @@ LabelNode* find_label(LabelNode *head, const char *name) {
         current = current->next;
     }
     return NULL; /* Label not found */
+}
+
+/*checking if its a valid symbol name without the ":"*/
+/*returns 1 if the symbol name is valid, 0 otherwise*/
+int is_valid_label_name(const char *name)
+{
+    int i;
+    int length;
+
+    if (name == NULL) {
+        return 0;
+    }
+
+    length = strlen(name);
+
+    if (length == 0 || length >= MAX_SYMBOL_NAME_LEN) {
+        return 0;
+    }
+
+    if (!isalpha((unsigned char)name[0])) {
+        return 0;
+    }
+
+    for (i = 1; i < length; i++) {
+        if (!isalnum((unsigned char)name[i])) {
+            return 0;
+        }
+    }
+
+    if (is_reserved_word(name) == 1) {
+        return 0;
+    }
+
+    return 1;
 }

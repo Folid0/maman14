@@ -88,7 +88,7 @@ int encode_r_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
         return -1;
     }
     
-    machine_code |= (op_code << 26);
+    machine_code |= ((unsigned long)op_code << 26);
     machine_code |= (rs << 21);
     machine_code |= (rt << 16);
     machine_code |= (rd << 11);
@@ -116,7 +116,10 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     int rt, rs;
     char operand1[MAX_LINE_LEN], operand2[MAX_LINE_LEN], operand3[MAX_LINE_LEN], extra[MAX_LINE_LEN];
     int is_branch = 0, immed;
-    
+    char *endptr;
+    long immed_tmp;
+
+
     if (op_code == -1) {
         /*invalid instruction*/
         data->error_flag = 1;
@@ -124,8 +127,8 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     }
     
     /* Set the opcode in bits 26-31 */
-    machine_code |= (op_code << 26);
-
+    machine_code |= ((unsigned long)op_code << 26);
+    
     /* Check if its a branch instruction (opcodes 15 to 18) */
     if (op_code >= 15 && op_code <= 18) {
         is_branch = 1;
@@ -152,9 +155,30 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
             data->error_flag = 1;
             return -1;
         }
+
+        if (is_valid_label_name(operand3) == 0) {
+            fprintf(stderr,
+                    "Error: Invalid branch target '%s' for instruction '%s'\n", operand3, name);
+            data->error_flag = 1;
+            return -1;
+        }
     }
     else{
-        immed = atol(operand2);  /*string to integer*/
+
+        immed_tmp = strtol(operand2, &endptr, 10);
+
+        /*allow trailing spaces and tabs*/
+        while (*endptr == ' ' || *endptr == '\t') {
+            endptr++;
+        }
+
+        if (endptr == operand2 || *endptr != '\0' || immed_tmp < -32768L || immed_tmp > 32767L) {
+            fprintf(stderr, "Error: Invalid immediate value '%s' for instruction '%s'\n", operand2, name);
+            data->error_flag = 1;
+            return -1;
+        }
+
+        immed = (int)immed_tmp;
         rt = get_register_num(operand3);
 
         if (rs == -1 || rt == -1) {
@@ -208,7 +232,7 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     }
 
     /* Set the opcode in bits 26-31 */
-    machine_code |= (op_code << 26);
+    machine_code |= ((unsigned long)op_code << 26);
 
     /* op_code 63 is "hlt", which takes absolutely no operands */
     if (op_code == 63) {
@@ -235,12 +259,12 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
             } 
             else {
                 /* Operand is a label: Verify it does not start with a number */
-                if (!isalpha(operand[0])) {
+                if (is_valid_label_name(operand) == 0) {
                     fprintf(stderr, "Error: Invalid operand '%s' for 'jmp'. Expected a valid label or register.\n", operand);
                     data->error_flag = 1;
                     return -1;
                 }
-                /* Bits 0-24 remain 0 for now. The second pass will encode the label address. */
+                /* Bits 0-24 remain 0 for now. The second pass will encode the label address */
             }
         } 
         else { 
@@ -253,12 +277,12 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
             }
             
             /* Verify it starts with a letter */
-            if (!isalpha(operand[0])) {
-                fprintf(stderr, "Error: Invalid operand '%s' for '%s'. Expected a valid label.\n", operand, name);
+            if (is_valid_label_name(operand) == 0) {
+                fprintf(stderr, "Error: Invalid operand '%s' for instruction '%s'. Expected a valid label.\n", operand, name);
                 data->error_flag = 1;
                 return -1;
             }
-            /* Bits 0-24 remain 0 for now. The second pass will encode the label address. */
+            /* Bits 0-24 remain 0 for now. The second pass will encode the label address */
         }
 
         /* Verify there is no extra garbage text after the operand */
@@ -321,6 +345,11 @@ int encode_asciz_directive(char *line, int *word_idx,char *name, AssemblerData *
     
     /* Read characters until closing quote or end of line */
     while(line[*word_idx] != '\0' && line[*word_idx] != '\n' && line[*word_idx] != '"') {
+        if ((unsigned char)line[*word_idx] < 32 || (unsigned char)line[*word_idx] > 126) { /*check for non ASCII characters*/
+            fprintf(stderr, "Error: .asciz contains a non-printable ASCII character\n");
+            data->error_flag = 1;
+            return -1;
+        }
         data->data_image[data->DC++] = line[*word_idx];
         (*word_idx)++;
     }
@@ -356,11 +385,24 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
     char *endptr;
     int state = 0; /* State: 0 expects a number, 1 expects a comma */
     int i;
+    long min_value;
+    long max_value;
+
     size = (strcmp(name, ".db") == 0) ? 1 : ((strcmp(name, ".dh") == 0) ? 2 : (strcmp(name, ".dw") == 0) ? 4 : 0);
     if (size == 0) {
         fprintf(stderr, "Error: Unknown directive '%s'\n", name);
         data->error_flag = 1;
         return -1;
+    }
+    else if (size == 1) {
+        min_value = -128L;
+        max_value = 127L;
+    } else if (size == 2) {
+        min_value = -32768L;
+        max_value = 32767L;
+    } else { /* size == 4 */
+        min_value = -2147483648L;
+        max_value = 2147483647L;
     }
 
     while (line[*word_idx] != '\0' && line[*word_idx] != '\n') {
@@ -376,8 +418,15 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
                 
                 /* Parse the number */
                 val = strtol(&line[*word_idx], &endptr, 10);
+
                 if (endptr == &line[*word_idx]) {
                     fprintf(stderr, "Error: expected an integer\n");
+                    data->error_flag = 1; 
+                    return -1;
+                }
+                
+                if (val < min_value || val > max_value) {
+                    fprintf(stderr, "Error: value %ld out of range for directive '%s'\n", val, name);
                     data->error_flag = 1; 
                     return -1;
                 }
@@ -431,9 +480,8 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
         return -1;
     }
 
-    /* Verify label syntax (must start with a letter) */
-    if (!isalpha(label_name[0])) {
-        fprintf(stderr, "Error: Invalid label '%s' for .extern. Must start with a letter.\n", label_name);
+    if (is_valid_label_name(label_name) == 0) {
+        fprintf(stderr, "Error: Invalid label '%s' for .extern\n", label_name);
         data->error_flag = 1;
         return -1;
     }
@@ -492,9 +540,9 @@ int handle_entry_directive_first_pass(char *line, int *word_idx, char *name, Ass
         return -1;
     }
 
-    /* Verify label syntax (must start with a letter) */
-    if (!isalpha(label_name[0])) {
-        fprintf(stderr, "Error: Invalid label '%s' for .entry. Must start with a letter.\n", label_name);
+    /* Verify label syntax */
+    if (is_valid_label_name(label_name) == 0) {
+        fprintf(stderr, "Error: Invalid label '%s' for .entry\n", label_name);
         data->error_flag = 1;
         return -1;
     }

@@ -52,8 +52,10 @@ int get_next_word(char *line, int *index, char *word){
 int get_next_command(char *line, int *index, char *word){
     int i = *index;
     int j = 0;
+    int tmp_idx;
+    char tmp_word[MAX_LINE_LEN];
 
-    i = skip_whitespace(line, *index);
+    i = skip_whitespace(line, i);
 
     /*if there is no word*/
     if (line[i] == '\0' || line[i] == '\n' || line[i] == ',') {
@@ -64,23 +66,33 @@ int get_next_command(char *line, int *index, char *word){
 
     /*set the word*/
     while (line[i] != ',' && line[i] != '\t' && line[i] != '\0'
-         && line[i] != '\n' && j <MAX_LINE_LEN - 1){
-        if (word[j] != ' '){
-            word[j] = line[i];
-            j++;
-        }
-
-        
+         && line[i] != '\n' && line[i] != ' ' && j <MAX_LINE_LEN - 1){
+        word[j] = line[i];
+        j++;
         i++;
     }
     
-    if (line[i] == ',') {
-        /*if the next last is a comma, skip it*/
-        i++;
-    }
-    
-
     word[j] = '\0';
+
+    i = skip_whitespace(line, i);
+
+    if (line[i] == ',') {
+        /*if the next character is a comma, skip it*/
+        i++;
+        tmp_idx = i;
+        if (get_next_word(line, &tmp_idx, tmp_word) == 0) { /*there is a trailing comma without a word after it*/
+            word[0] = '\0';
+            *index = i;
+            return 0;
+        }
+    }
+    else if(line [i] != '\0' && line[i] != '\n') { /*if there are charecrers where they are not suppost to be*/
+        word[0] = '\0';
+        *index = i;
+        return 0;
+    }
+
+    
     *index = i;
     return 1;
 }
@@ -115,6 +127,10 @@ int get_macro_initialization_name_from_line(char *line, char* name){
             return -1; /* Macro name must start with a letter */;
         }
 
+        if (strlen(word) >= MAX_MACRO_NAME_LEN) {
+            fprintf(stderr, "Error: Macro name exceeds maximum length of %d characters.\n", MAX_MACRO_NAME_LEN);
+            return -1; /* Macro name exceeds maximum length */;
+        }
         for (i = 1; word[i] != '\0' && word[i] != '\n'; i++) { /*checks if the name contains only alphanumeric characters*/
             if (!isalnum(word[i]) && word[i] != '_') {
                 fprintf(stderr, "Error: Macro name must contain only alphanumeric characters or underscores.\n");
@@ -180,14 +196,19 @@ int is_strictly_digits(const char *str) {
 
 /*returns 1 if a label is found and extracted, -1 otherwise*/
 int get_label_name(char *line, int *word_idx, char *label_name) {
-    if (get_next_word(line, word_idx, label_name) == 0) {
+    char label_tmp[MAX_LINE_LEN];
+    if (get_next_word(line, word_idx, label_tmp) == 0) {
         return -1; /* No label found */
     }
 
-    if (is_label(label_name) == 1) {
-        label_name[strlen(label_name) - 1] = '\0'; /* Remove the trailing ':' */
-        return 1;
+    if (is_label(label_tmp) == 0) {
+        return -1; /* Not a valid label */
     }
+
+    label_tmp[strlen(label_tmp) - 1] = '\0'; /* Remove the trailing ':' */
+    strcpy(label_name, label_tmp);
+    return 1;
+
 
     return -1; /* Error */
 }

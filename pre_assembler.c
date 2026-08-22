@@ -43,6 +43,15 @@ int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
     }
     
     while (fgets(cur_line, sizeof(cur_line), input_file_as) != NULL){
+        line_idx++;
+
+        if (strchr(cur_line, '\n') == NULL && !feof(input_file_as)) {
+            fprintf(stderr, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
+                    line_idx, MAX_LINE_LEN - 2); /* -2 to account for newline and null terminator */
+            error_flag = 1;
+            /* Skip the rest of the line to avoid processing it */
+            flush_line(input_file_as);
+        }
 
         is_mcro_val = get_macro_initialization_name_from_line(cur_line, mcro_name);
         if (is_mcro_val == -1){
@@ -58,7 +67,7 @@ int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
             else{ /*no problem with adding macro to the list*/
                 if (error_flag == 0){
                     if (add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx) == -1){
-                        fprintf(stderr, "memmory allocation ERROR");
+                        fprintf(stderr, "Error adding line block to macro at line: %d", line_idx);
                         error_flag = 1;
                     }
                 }
@@ -70,9 +79,9 @@ int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
                 error_flag = 1;
             }
         }
+
     }
 
-        line_idx++;
     
 
 

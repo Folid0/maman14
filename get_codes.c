@@ -8,11 +8,12 @@
 #include "reserved_word.h"
 #include "writing_to_binary.h"
 
-int get_register_num(char *name) {
+int get_register_num(const char *name) {
     int reg_num;
-    if (name[0] != '$') {
-        return -1; /* Not a register */
+    if (name == NULL || is_register(name) == 0) {
+        return -1; /* Invalid register name */
     }
+
     reg_num = atoi(name + 1); /* Convert the number part to an integer */
     if (reg_num < 0 || reg_num > 31) {
         return -1; /* Invalid register number */

@@ -10,6 +10,6 @@ int get_opcode(char *name);
 int get_funct(char *name);
 
 /*returns the number of the register, if not a register returns -1*/
-int get_register_num(char *name); 
+int get_register_num(const char *name); 
 
 #endif /* GET_CODES_H */

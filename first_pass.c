@@ -22,11 +22,11 @@ int should_skip_line(char *line) {
     if (get_next_word(line, &word_idx, word) == 0) {
         /* Empty line, should skip */
         return 1;
-    } else if (strcmp(word, ";") == 0) {
+    }
+    else if (word[0] == ';') {
         /* Comment line, should skip */
         return 1;
     }
-
     return 0; /* Line should not be skipped */
 }
 
@@ -77,6 +77,7 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx, Macro
 int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
     char cur_line[MAX_LINE_LEN];
     int line_idx = 0;
+    LabelNode *tmp;
 
     /*initilsised data*/
     data->IC = 100; /*the IC starts at address 100*/
@@ -102,9 +103,16 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
         line_idx++;
     }
 
+
+    /*adding the ICF to the DC*/
     if (data->error_flag == 0){
-
-
+        tmp = data->label_head;
+        while (tmp != NULL) {
+            if (tmp->type == DATA) {
+                tmp->address += data->IC; /* Adjust data label addresses by adding IC */
+            }
+            tmp = tmp->next;
+        }
     }
 
     return (data->error_flag == 1)? -1 : 1; /* Return -1 if there was an error, 1 otherwise */
