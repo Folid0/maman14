@@ -1,5 +1,8 @@
 #ifndef MACRO_TABLE_H
 #define MACRO_TABLE_H
+#include <string.h>
+
+
 #include "consts.h"
 
 /* Line node for storing each line of the macro */

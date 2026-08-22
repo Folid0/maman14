@@ -120,3 +120,30 @@ int is_valid_label_name(const char *name)
 
     return 1;
 }
+
+/*adds a new extern usage node to the list*/
+/*returns 1 if successful, -1 otherwise*/
+int add_ExternUsage_node(ExternUsageNode **head, char *name, long address) {
+    ExternUsageNode *new_node = (ExternUsageNode *)malloc(sizeof(ExternUsageNode));
+    if (new_node == NULL) {
+        fprintf(stderr, "Memory allocation failed for new extern usage node.\n");
+        return -1; /* Memory allocation failed */
+    }
+
+    /* Initialize the new extern usage node */
+    strncpy(new_node->name, name, MAX_SYMBOL_NAME_LEN);
+    new_node->name[MAX_SYMBOL_NAME_LEN - 1] = '\0'; /* Ensure correct termination */
+    new_node->address = address;
+    new_node->next = NULL;
+
+    /* Add to the head of the list */
+    if (*head == NULL) {
+        *head = new_node;
+    } else {
+        new_node->next = *head;
+        *head = new_node;
+    }
+
+    return 1; /* Successfully added */
+
+}

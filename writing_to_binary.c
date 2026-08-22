@@ -128,7 +128,7 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     
     /* Set the opcode in bits 26-31 */
     machine_code |= ((unsigned long)op_code << 26);
-    
+
     /* Check if its a branch instruction (opcodes 15 to 18) */
     if (op_code >= 15 && op_code <= 18) {
         is_branch = 1;
@@ -236,7 +236,6 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
 
     /* op_code 63 is "hlt", which takes absolutely no operands */
     if (op_code == 63) {
-        /* check that there is no extra text*/
         if (get_next_word(line, word_idx, extra) != 0) {
             fprintf(stderr, "Error: Extraneous text after instruction 'hlt'\n");
             data->error_flag = 1;
@@ -330,7 +329,7 @@ int handle_data_directive(char *line, int *word_idx, AssemblerData *data) {
 
 
 /*encodes .asciz directive to binary*/
-
+/*returns 1 if successful, -1 if error*/
 int encode_asciz_directive(char *line, int *word_idx,char *name, AssemblerData *data) {
     int end_quote = 0;
     char trash[MAX_LINE_LEN];
@@ -631,4 +630,97 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
     }
 
     return 1; /* Successfully handled the label */
+}
+
+
+int encode_branch_instruction_second_pass(int offset, AssemblerData *data, int cur_IC) {
+    int code_idx = cur_IC - 100;
+    unsigned long machine_code;
+
+    if (code_idx < 0 || code_idx + 3 >= MAX_MEM_SIZE) { /*check if the code index is valid*/
+        fprintf(stderr, "Error: Invalid code index %d for branch instruction at IC %d\n", code_idx, cur_IC);
+        data->error_flag = 1;
+        return -1;
+    }
+
+    machine_code =
+      ((unsigned long)data->code_image[code_idx])
+    | ((unsigned long)data->code_image[code_idx + 1] << 8)
+    | ((unsigned long)data->code_image[code_idx + 2] << 16)
+    | ((unsigned long)data->code_image[code_idx + 3] << 24);
+
+    machine_code &= 0xFFFF0000UL;
+    machine_code |= ((unsigned long)offset & 0xFFFFUL);
+    data->code_image[code_idx] = machine_code & 0xFF;
+    data->code_image[code_idx + 1] = (machine_code >> 8) & 0xFF;
+    data->code_image[code_idx + 2] = (machine_code >> 16) & 0xFF;
+    data->code_image[code_idx + 3] = (machine_code >> 24) & 0xFF;
+
+    return 1;
+}
+
+int encode_jmp_label_instruction_second_pass(char *line, AssemblerData *data, int *cur_IC) {
+    char label_name[MAX_LINE_LEN];
+    int code_idx = *cur_IC - 100;
+    LabelNode *label_node;
+    unsigned long machine_code;
+
+    if (get_next_command(line, cur_IC, label_name) == 0) {
+        fprintf(stderr, "Error: Missing label for jump instruction at IC %d\n", *cur_IC);
+        data->error_flag = 1;
+        return -1;
+    }
+
+    label_node = find_label(data->label_head, label_name);
+    if (label_node == NULL) {
+        fprintf(stderr, "Error: Undefined label '%s' for jump instruction at IC %d\n", label_name, *cur_IC);
+        data->error_flag = 1;
+        return -1;
+    }
+
+    machine_code =
+      ((unsigned long)data->code_image[code_idx])
+    | ((unsigned long)data->code_image[code_idx + 1] << 8)
+    | ((unsigned long)data->code_image[code_idx + 2] << 16)
+    | ((unsigned long)data->code_image[code_idx + 3] << 24);
+
+    machine_code &= 0xFE000000UL; /* Clear bits 0-24 */
+    machine_code |= ((unsigned long)label_node->address & 0x01FFFFFFUL); /* Set bits 0-24 to the label address */
+
+    data->code_image[code_idx] = machine_code & 0xFF;
+    data->code_image[code_idx + 1] = (machine_code >> 8) & 0xFF;
+    data->code_image[code_idx + 2] = (machine_code >> 16) & 0xFF;
+    data->code_image[code_idx + 3] = (machine_code >> 24) & 0xFF;
+
+    return 1;
+}
+
+
+int encode_j_type_instruction_second_pass(char *line, LabelNode *label_node, AssemblerData *data, int *cur_IC) {
+    unsigned long machine_code = 0;
+    int code_idx = *cur_IC - 100;
+    
+    if (code_idx < 0 || code_idx + 3 >= MAX_MEM_SIZE) { /*check if the code index is valid*/
+        fprintf(stderr, "Error: Invalid code index %d for J-type instruction at IC %d\n", code_idx, *cur_IC);
+        data->error_flag = 1;
+        return -1;
+    }
+
+    machine_code =
+        ((unsigned long)data->code_image[code_idx])
+    | ((unsigned long)data->code_image[code_idx + 1] << 8)
+    | ((unsigned long)data->code_image[code_idx + 2] << 16)
+    | ((unsigned long)data->code_image[code_idx + 3] << 24);
+
+    /* Clear bits 0-24 and bit 25 */
+    machine_code &= 0xFC000000UL;
+
+    machine_code |= ((unsigned long)label_node->address & 0x01FFFFFFUL);
+
+    data->code_image[code_idx] = machine_code & 0xFF;
+    data->code_image[code_idx + 1] = (machine_code >> 8) & 0xFF;
+    data->code_image[code_idx + 2] = (machine_code >> 16) & 0xFF;
+    data->code_image[code_idx + 3] = (machine_code >> 24) & 0xFF;
+    
+    return 1;
 }

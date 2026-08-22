@@ -33,11 +33,20 @@ typedef struct {
     int error_flag;
 } AssemblerData;
 
+typedef struct ExternLabelNode{
+    char name[MAX_SYMBOL_NAME_LEN];
+    long address;
+    struct ExternLabelNode *next;
+} ExternUsageNode;
+
+
+
 int should_skip_line(char *line);
 int add_label(LabelNode **head, char *name, int address, LabelType type);
 int is_label(const char *word);
 LabelType get_label_type(const char *word);
 LabelNode* find_label(LabelNode *head, const char *name);
 int is_valid_label_name(const char *name);
+int add_ExternUsage_node(ExternUsageNode **head, char *name, long address);
 
 #endif /* SYMBOL_TABLE_H */

@@ -18,5 +18,6 @@ int encode_asciz_directive(char *line, int *word_idx, char *name, AssemblerData 
 int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerData *data);
 
 int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro_head);
-
+int encode_j_type_instruction_second_pass(char *line, LabelNode *label_node, AssemblerData *data, int *cur_IC);
+int encode_branch_instruction_second_pass(int offset, AssemblerData *data, int cur_IC);
 #endif /* WRITING_TO_BINARY_H */

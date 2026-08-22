@@ -155,3 +155,20 @@ int is_j_type_instruction(const char *word) {
     }
     return 0;
 }
+
+
+int is_branch_instruction(const char *word) {
+    const char * const branch_instructions[] = {
+        "bne", "beq", "blt", "bgt"
+    };
+    int num_branch_instructions = sizeof(branch_instructions) / sizeof(branch_instructions[0]);
+
+    int i;
+    for (i = 0; i < num_branch_instructions; i++) {
+        if (strcmp(branch_instructions[i], word) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+

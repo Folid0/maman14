@@ -221,3 +221,72 @@ void flush_line(FILE *fp) {
         /* discard characters */
     }
 }
+
+/*returns 1 if the line should be skipped, 0 otherwise*/
+int should_skip_line(char *line) {
+    int word_idx = 0;
+    char word[MAX_LINE_LEN];
+
+    if (get_next_word(line, &word_idx, word) == 0) {
+        /* Empty line, should skip */
+        return 1;
+    }
+    else if (word[0] == ';') {
+        /* Comment line, should skip */
+        return 1;
+    }
+    return 0; /* Line should not be skipped */
+}
+
+/*returns 1 if entry directive, 0 otherwise*/
+int is_entry_directive(char *line) {
+    int word_idx = 0;
+    char word[MAX_LINE_LEN];
+
+    if (get_next_word(line, &word_idx, word) == 0) {
+        return 0; /* No words in the line */
+    }
+
+    if (strcmp(word, ".entry") == 0) {
+        return 1; /* It's an .entry directive */
+    }
+
+    return 0; /* Not an .entry directive */
+}
+
+
+/*returns 1 if incremented, 0 if not incremented, -1 if error*/
+int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,AssemblerData *data) {
+    int size;
+    if (is_data_directive(command) && strcmp(command, ".asciz") != 0) {
+        size = (strcmp(command, ".db") == 0) ? 1 : ((strcmp(command, ".dh") == 0) ? 2 : (strcmp(command, ".dw") == 0) ? 4 : 0);
+        if (size == 0) {
+            fprintf(stderr, "Error: Unknown directive '%s'\n", command);
+            data->error_flag = 1;
+            return -1;
+        } 
+        *cur_DC += size; /* Increment DC by the size of the directive */
+        return 1;        
+    }
+    else if (strcmp(command, ".asciz") == 0) {
+        skip_whitespace(line, *word_idx);
+        if (line[*word_idx] != '"') {
+            fprintf(stderr, "Error: .asciz string must start with a quote\n");
+            data->error_flag = 1;
+            return -1;
+        }
+        (*word_idx)++; /* Skip the starting quote */
+        while(line[*word_idx] != '\0' && line[*word_idx] != '\n' && line[*word_idx] != '"') {
+            if ((unsigned char)line[*word_idx] < 32 || (unsigned char)line[*word_idx] > 126) { /*check for non ASCII characters*/
+                fprintf(stderr, "Error: .asciz contains a non-printable ASCII character\n");
+                data->error_flag = 1;
+                return -1;
+            }
+            (*cur_DC)++; /* Increment DC for each character */
+            (*word_idx)++;
+        }
+
+        return 1;
+    }
+    return 0; /*nothing was incremented*/
+}
