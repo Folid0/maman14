@@ -13,24 +13,6 @@
     
 
 
-
-/*returns 1 if the line should be skipped, 0 otherwise*/
-int should_skip_line(char *line) {
-    int word_idx = 0;
-    char word[MAX_LINE_LEN];
-
-    if (get_next_word(line, &word_idx, word) == 0) {
-        /* Empty line, should skip */
-        return 1;
-    }
-    else if (word[0] == ';') {
-        /* Comment line, should skip */
-        return 1;
-    }
-    return 0; /* Line should not be skipped */
-}
-
-
 /*returns 1 if there was a line to process, 0 if skipped, -1 if error*/
 int process_line_first_pass(char *line, AssemblerData *data, int line_idx, MacroNode *macro_head) {
     int word_idx = 0;
@@ -86,6 +68,8 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
     data->error_flag = 0;
 
     while (fgets(cur_line, sizeof(cur_line), am_file) != NULL) {
+        line_idx++;
+        
         if (strchr(cur_line, '\n') == NULL && !feof(am_file)) {
             fprintf(stderr, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
                     line_idx + 1, MAX_LINE_LEN);
@@ -100,7 +84,6 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
                 data->error_flag = 1; /* Set error flag */
             }
         }
-        line_idx++;
     }
 
 

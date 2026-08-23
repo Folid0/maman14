@@ -659,42 +659,6 @@ int encode_branch_instruction_second_pass(int offset, AssemblerData *data, int c
     return 1;
 }
 
-int encode_jmp_label_instruction_second_pass(char *line, AssemblerData *data, int *cur_IC) {
-    char label_name[MAX_LINE_LEN];
-    int code_idx = *cur_IC - 100;
-    LabelNode *label_node;
-    unsigned long machine_code;
-
-    if (get_next_command(line, cur_IC, label_name) == 0) {
-        fprintf(stderr, "Error: Missing label for jump instruction at IC %d\n", *cur_IC);
-        data->error_flag = 1;
-        return -1;
-    }
-
-    label_node = find_label(data->label_head, label_name);
-    if (label_node == NULL) {
-        fprintf(stderr, "Error: Undefined label '%s' for jump instruction at IC %d\n", label_name, *cur_IC);
-        data->error_flag = 1;
-        return -1;
-    }
-
-    machine_code =
-      ((unsigned long)data->code_image[code_idx])
-    | ((unsigned long)data->code_image[code_idx + 1] << 8)
-    | ((unsigned long)data->code_image[code_idx + 2] << 16)
-    | ((unsigned long)data->code_image[code_idx + 3] << 24);
-
-    machine_code &= 0xFE000000UL; /* Clear bits 0-24 */
-    machine_code |= ((unsigned long)label_node->address & 0x01FFFFFFUL); /* Set bits 0-24 to the label address */
-
-    data->code_image[code_idx] = machine_code & 0xFF;
-    data->code_image[code_idx + 1] = (machine_code >> 8) & 0xFF;
-    data->code_image[code_idx + 2] = (machine_code >> 16) & 0xFF;
-    data->code_image[code_idx + 3] = (machine_code >> 24) & 0xFF;
-
-    return 1;
-}
-
 
 int encode_j_type_instruction_second_pass(char *line, LabelNode *label_node, AssemblerData *data, int *cur_IC) {
     unsigned long machine_code = 0;

@@ -239,8 +239,7 @@ int should_skip_line(char *line) {
 }
 
 /*returns 1 if entry directive, 0 otherwise*/
-int is_entry_directive(char *line) {
-    int word_idx = 0;
+int is_entry_directive(char *line, int word_idx) {
     char word[MAX_LINE_LEN];
 
     if (get_next_word(line, &word_idx, word) == 0) {

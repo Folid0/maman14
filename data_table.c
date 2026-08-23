@@ -19,7 +19,8 @@ int add_label(LabelNode **head, char *name, int address, LabelType type) {
     new_node->address = address;
     new_node->type = type;
     new_node->next = NULL;
-
+    new_node->is_entry = 0;
+    
     /* Add to the head of the list */
     if (*head == NULL) {
         *head = new_node;
@@ -146,4 +147,28 @@ int add_ExternUsage_node(ExternUsageNode **head, char *name, long address) {
 
     return 1; /* Successfully added */
 
+}
+
+/*frees the nodes in the ExternUsageNode list*/
+void free_extern_usage_table(ExternUsageNode *head){
+    ExternUsageNode *tmp = head;
+    ExternUsageNode *next;
+
+    while (tmp != NULL) {
+        next = tmp->next;
+        free(tmp);
+        tmp = next;
+    }
+}
+
+/*frees the nodes in the LabelNode list*/
+void free_label_table(LabelNode *head){
+    LabelNode *tmp = head;
+    LabelNode *next;
+
+    while (tmp != NULL) {
+        next = tmp->next;
+        free(tmp);
+        tmp = next;
+    }
 }

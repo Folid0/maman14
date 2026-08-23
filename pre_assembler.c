@@ -104,12 +104,6 @@ int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
 
     *macro_head_ret = mcro_node_head; /*setting the head of the ret node to the head of the macro list*/
 
-    /*
-
-    free_macro_table(mcro_node_head); 
-
-    */
-   
     return 1; /*successful*/
 }
 

@@ -27,7 +27,7 @@ int get_next_command(char *line, int *index, char *word);
 int is_strictly_digits(const char *str);
 int get_label_name(char *line, int *word_idx, char *label_name);
 int should_skip_line(char *line);
-int is_entry_directive(char *line);
+int is_entry_directive(char *line, int word_idx);
 int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,AssemblerData *data);
 
 void flush_line(FILE *fp);

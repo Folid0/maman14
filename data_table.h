@@ -41,12 +41,14 @@ typedef struct ExternLabelNode{
 
 
 
-int should_skip_line(char *line);
 int add_label(LabelNode **head, char *name, int address, LabelType type);
 int is_label(const char *word);
 LabelType get_label_type(const char *word);
 LabelNode* find_label(LabelNode *head, const char *name);
 int is_valid_label_name(const char *name);
 int add_ExternUsage_node(ExternUsageNode **head, char *name, long address);
+
+void free_extern_usage_table(ExternUsageNode *head);
+void free_label_table(LabelNode *head);
 
 #endif /* SYMBOL_TABLE_H */

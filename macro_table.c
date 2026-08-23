@@ -20,7 +20,12 @@ int add_macro(MacroNode **head, char *name) {
     new_node->lines_head = NULL;
     new_node->lines_tail = NULL;
     new_node->next = NULL;
-
+    
+    if (find_macro(*head, name) != NULL) {
+        fprintf(stderr, "Error: Macro '%s' is already defined.\n", name);
+        free(new_node);
+        return -1; /* Macro already exists */
+    }
     /* Add to the head of the list */
     if (*head == NULL) {
         *head = new_node;

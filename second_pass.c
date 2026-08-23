@@ -18,7 +18,7 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
 
     char word[MAX_LINE_LEN];
     int word_idx = 0;
-
+    int command_start_idx = 0;
     if (should_skip_line(cur_line) == 1) {
         return 0; /* Skip this line */
     }
@@ -28,34 +28,42 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
     }
 
     if (is_label(word)) {
-        get_next_word(cur_line, &word_idx, word); /* skip the label */
+        command_start_idx = word_idx; /* Set the index to the start of the command */
+        if (get_next_word(cur_line, &word_idx, word) == 0) { /* Get the next word after the label */
+            fprintf(stderr, "Error: Missing instruction or directive after label at line %d.\n", line_idx);
+            data->error_flag = 1;
+            return -1;
+        }
     }
-    
-    if (is_entry_directive(cur_line)) {
+    if (strcmp(word, ".entry") == 0) {
         /* Handle .entry directive */
-        if (handle_entry_directive_second_pass(cur_line, data) == -1) {
+        if (handle_entry_directive_second_pass(cur_line, command_start_idx, data) == -1) {
             fprintf(stderr, "Error: Failed to handle .entry directive at line %d.\n", line_idx);
+            data->error_flag = 1;
             return -1;
         }
     }
 
-    else if (is_branch_instruction(word)) {            
+
+    if (is_branch_instruction(word)) {            
         /* Handle branch instruction */
-        if (handle_branch_instruction_second_pass(cur_line, &word_idx, data, *cur_IC) == -1) {
+        if (handle_branch_instruction_second_pass(cur_line, &command_start_idx, data, *cur_IC) == -1) {
+            *cur_IC += 4;
+            data->error_flag = 1;
             return -1;
         }
     }
-
-    /* Update IC and DC based on the type of instruction or directive */
-    else if (is_instruction(word)) {
+    if (is_j_type_instruction(word) && strcmp(word, "hlt") != 0) {
+        /* Handle J-type instruction */
+        if (handle_j_type_instruction_second_pass(cur_line, &command_start_idx, *cur_IC, data, extern_head) == -1) {
+            *cur_IC += 4;
+            data->error_flag = 1;
+            return -1;
+        }
+    }
+    if (is_instruction(word)) {
         *cur_IC += 4;
     }
-    else if (is_data_directive(word)) {
-        if (increment_DC(cur_line, &word_idx, word, cur_DC, data) == -1) {
-            return -1;
-        }
-    }
-
 
     return 1;
 }
@@ -67,6 +75,8 @@ int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern
     int cur_IC = 100;
     int cur_DC = 0;
 
+    rewind(am_file); /* Reset file pointer*/
+
     if (extern_head == NULL) {
         fprintf(stderr, "Error: no pointer was given for extern usage list.\n");
         return -1;
@@ -77,19 +87,18 @@ int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern
         line_idx++;
         if (process_line_second_pass(cur_line, data, line_idx, &cur_IC, &cur_DC, extern_head) == -1) {
             fprintf(stderr, "Error: Failed to process line %d in second pass.\n", line_idx);
-            return -1;
+            data->error_flag = 1;
         }
     }
 
-    return 1; /* Successfully completed the second pass */
+    return data->error_flag ? -1 : 1; /* Return -1 if there were errors, otherwise return 1 */
 }
 
-int handle_entry_directive_second_pass(char *line, AssemblerData *data) {
-    int word_idx = 0;
+int handle_entry_directive_second_pass(char *line, int word_idx, AssemblerData *data) {
     char label_name[MAX_SYMBOL_NAME_LEN];
     LabelNode *label_node;
 
-    if (is_entry_directive(line) == 0) {
+    if (is_entry_directive(line, word_idx) == 0) {
         fprintf(stderr, "Error: Not an .entry directive\n");
         data->error_flag = 1;
         return -1;
@@ -118,7 +127,11 @@ int handle_entry_directive_second_pass(char *line, AssemblerData *data) {
         data->error_flag = 1;
         return -1;
     }
-    
+    if (label_node->type == EXTERN) {
+        fprintf(stderr, "Error: Label '%s' defined as .extern cannot be marked as .entry\n", label_name);
+        data->error_flag = 1;
+        return -1;
+    }
     /* set the label as an entry */
     label_node->is_entry = 1;
 
@@ -169,7 +182,7 @@ int get_branch_value(char *line, AssemblerData *data, int cur_IC, char *label_na
         return -1;
     }
 
-    *offset = label_node->address - (cur_IC + 4); /* calculate the offset */
+    *offset = label_node->address - cur_IC ;
     
     if (*offset < -32768 || *offset > 32767) {
         fprintf(stderr, "Error: Offset %d for label '%s' is out of range for branch instruction\n", *offset, label_name);
@@ -238,11 +251,7 @@ int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC,
         return -1; /* Failed to get J-type instruction values */
     }
 
-    if (op_code == 63) { /* hlt */
-        return 1;
-    }
-
-    else if (op_code == 30 && is_register(operand)) { /* jmp with register operand */
+    if (op_code == 30 && is_register(operand)) { /* jmp with register operand */
         return 1; /* No further processing needed for register operand */
     }      
 
@@ -254,7 +263,7 @@ int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC,
     }   
 
     if (label_node->type == EXTERN) {
-        if (add_ExternUsage_node(extern_head, label_node->name, label_node->address) == -1) {
+        if (add_ExternUsage_node(extern_head, label_node->name, cur_IC) == -1) {
             fprintf(stderr, "Error: Failed to add extern usage for label '%s'\n", label_node->name);
             data->error_flag = 1;
             return -1;
