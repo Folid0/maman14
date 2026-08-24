@@ -37,7 +37,7 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
     
     while (fgets(cur_line, sizeof(cur_line), input_file_as) != NULL){
         line_idx++;
-
+        
         if (strchr(cur_line, '\n') == NULL && !feof(input_file_as)) {
             fprintf(stdout, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
                     line_idx, MAX_LINE_LEN - 2); /* -2 to account for newline and null terminator */
@@ -84,7 +84,7 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
                 }
             }
         }
-        else if (is_mcro_val == 0 && error_flag == 0){ /*its not a mcro and there is no error*/
+        else if (is_mcro_val == 0){ /*its not a mcro and there is no error*/
             if (put_line(output_file_am, cur_line, mcro_node_head) == -1){
                 fprintf(stdout, "Error putting line to output file at line: %d", line_idx);
                 error_flag = 1;

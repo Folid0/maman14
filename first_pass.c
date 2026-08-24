@@ -73,7 +73,7 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
         
         if (strchr(cur_line, '\n') == NULL && !feof(am_file)) {
             fprintf(stdout, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
-                    line_idx, MAX_LINE_LEN);
+                    line_idx, MAX_LINE_LEN - 2); 
             data->error_flag = 1;
             /* Skip the rest of the line to avoid processing it */
             flush_line(am_file);

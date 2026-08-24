@@ -1,22 +1,2 @@
-CC = gcc
-CFLAGS = -Wall -ansi -pedantic -std=c89
-TARGET = assembler
-
-# Automatically find all .c files in the directory
-SRCS = $(wildcard *.c)
-
-# Convert all .c filenames to .o filenames
-OBJS = $(patsubst %.c, %.o, $(SRCS))
-
-all: $(TARGET)
-
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-clean:
-	rm -f *.o $(TARGET)
-
-.PHONY: all clean
+assembler: main.c main.h consts.h data_table.c data_table.h file_utils.c file_utils.h first_pass.c first_pass.h get_codes.c get_codes.h macro_table.c macro_table.h pre_assembler.c pre_assembler.h reserved_word.c reserved_word.h second_pass.c second_pass.h utils.c utils.h writing_to_binary.c writing_to_binary.h
+	gcc -Wall -ansi -pedantic main.c data_table.c file_utils.c first_pass.c get_codes.c macro_table.c pre_assembler.c reserved_word.c second_pass.c utils.c writing_to_binary.c -o assembler

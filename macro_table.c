@@ -107,35 +107,45 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
     char word[MAX_LINE_LEN];
     int word_idx = 0;
     int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
+    int error_flag = 0; /*if the length of a single line is too long*/
 
     int flag = 0; /*0 for loop to run and 1 to break*/
     while (flag == 0 && fgets(cur_line, MAX_LINE_LEN, input_file_as)!= NULL){
         (*line_idx)++;
-        word_idx = 0; /*checking the first word of the line*/
-        get_next_word(cur_line, &word_idx, word);
-        word_idx = skip_whitespace(cur_line, word_idx);
-
-        if (strcmp(word, "mcroend") == 0){ /*macro ended*/
-            if (get_next_word(cur_line, &word_idx, word) == 1){ /*there is a word after mcroend*/
-                fprintf(stdout, "Error: Unexpected text after 'mcroend' at line %d.\n", *line_idx);
-                return -1;
-            }
-            flag = 1;
-        }
         
+        if (strchr(cur_line, '\n') == NULL && !feof(input_file_as)) {
+            fprintf(stdout, "Error: Line %d exceeds maximum allowed length (%d characters).\n", *line_idx, MAX_LINE_LEN - 2);
+            flush_line(input_file_as);
+            error_flag = 1;
+        }
         else{
-            error_value = add_line_to_macro(node, cur_line);
-            if (error_value == MEMORY_ALLOCATION_ERROR){ /*checks memory allocation error*/
-                fprintf(stdout, "memmory allocation ERROR");
-                return MEMORY_ALLOCATION_ERROR;
+
+            word_idx = 0; /*checking the first word of the line*/
+            get_next_word(cur_line, &word_idx, word);
+            word_idx = skip_whitespace(cur_line, word_idx);
+
+            if (strcmp(word, "mcroend") == 0){ /*macro ended*/
+                if (get_next_word(cur_line, &word_idx, word) == 1){ /*there is a word after mcroend*/
+                    fprintf(stdout, "Error: Unexpected text after 'mcroend' at line %d.\n", *line_idx);
+                    return -1;
+                }
+                flag = 1;
             }
-            else if (error_value == -1){
-                return -1;
+            
+            else{
+                error_value = add_line_to_macro(node, cur_line);
+                if (error_value == MEMORY_ALLOCATION_ERROR){ /*checks memory allocation error*/
+                    fprintf(stdout, "memmory allocation ERROR");
+                    return MEMORY_ALLOCATION_ERROR;
+                }
+                else if (error_value == -1){
+                    return -1;
+                }
             }
         }
     }
 
-    return 0;
+    return error_flag == 0 ? 1 : -1; /*returns 1 if successful, -1 if there was an error, -2 for memory allocation error*/
 }
 
 /* Replace a macro with its lines in the output file */
