@@ -46,6 +46,7 @@ int run_file(char *file_path, int max_file_path_len) {
     MacroNode *macro_head = NULL;
     ExternUsageNode *extern_head = NULL; 
     AssemblerData data;
+    int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
     FILE *am_file = NULL, *ob_file = NULL, *ext_file = NULL, *ent_file = NULL;
     char *ext_file_name = (char *) malloc(max_file_path_len);
     char *ent_file_name = (char *) malloc(max_file_path_len);
@@ -75,11 +76,12 @@ int run_file(char *file_path, int max_file_path_len) {
         return -1;
     }
 
-    if (run_pre_assembler(&macro_head, file_path, am_file_name) != 1) {
+    error_value = run_pre_assembler(&macro_head, file_path, am_file_name);
+    if (error_value != 1) {
         fprintf(stdout, "Error: Pre-assembler failed for file %s\n", file_path);
         remove_files(am_file, ob_file, ext_file, ent_file, am_file_name, ob_file_name, ext_file_name, ent_file_name); /* Remove the files that were allready created */
         free_everything(&data, macro_head, extern_head, am_file_name, base_file_name, ob_file_name, ext_file_name, ent_file_name);
-        return -1;
+        return error_value;
     }
 
     am_file = fopen(am_file_name, "r");
@@ -90,18 +92,20 @@ int run_file(char *file_path, int max_file_path_len) {
         return -1; 
     }
 
-    if (run_first_pass(am_file, &data, macro_head) != 1) {
+    error_value = run_first_pass(am_file, &data, macro_head);
+    if (error_value != 1) {
         fprintf(stdout, "Error: First pass failed for file %s\n", file_path);
         remove_files(am_file, ob_file, ext_file, ent_file, am_file_name, ob_file_name, ext_file_name, ent_file_name); /* Remove the files that were allready created */
         free_everything(&data, macro_head, extern_head, am_file_name, base_file_name, ob_file_name, ext_file_name, ent_file_name);
-        return -1;
+        return error_value;
     }
 
-    if (run_second_pass(am_file, &data, &extern_head) != 1) {
+    error_value = run_second_pass(am_file, &data, &extern_head);
+    if (error_value != 1) {
         fprintf(stdout, "Error: Second pass failed for file %s\n", file_path);
         remove_files(am_file, ob_file, ext_file, ent_file, am_file_name, ob_file_name, ext_file_name, ent_file_name); /* Remove the files that were allready created */
         free_everything(&data, macro_head, extern_head, am_file_name, base_file_name, ob_file_name, ext_file_name, ent_file_name);
-        return -1;
+        return error_value;
     }
 
     ob_file = fopen(ob_file_name, "w");
@@ -164,5 +168,5 @@ int main(int argc, char *argv[]) {
     /*run on all of the files*/
     result = run_on_files(argc - 1, argv + 1); /* Skip the program name */
 
-    return result; 
+    return result == 1 ? 0 : 1; /* Return 0 for success, 1 for error */
 }

@@ -19,6 +19,7 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
     char word[MAX_LINE_LEN];
     int word_idx = 0;
     int command_start_idx = 0;
+    int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
     if (should_skip_line(cur_line) == 1) {
         return 0; /* Skip this line */
     }
@@ -55,7 +56,7 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
     }
     if (is_j_type_instruction(word) && strcmp(word, "hlt") != 0) {
         /* Handle J-type instruction */
-        int error_value = handle_j_type_instruction_second_pass(cur_line, &command_start_idx, *cur_IC, data, extern_head);
+        error_value = handle_j_type_instruction_second_pass(cur_line, &command_start_idx, *cur_IC, data, extern_head);
         if (error_value != 1) {
             *cur_IC += 4;
             data->error_flag = 1;
@@ -250,6 +251,7 @@ int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC,
     char operand[MAX_LINE_LEN];
     char name[MAX_LINE_LEN];
     int op_code;
+    int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
     LabelNode *label_node;
 
     if (get_j_type_value(line, name, word_idx, &op_code, operand, data) == -1) {
@@ -268,11 +270,11 @@ int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC,
     }   
 
     if (label_node->type == EXTERN) {
-        int error_value = add_ExternUsage_node(extern_head, label_node->name, cur_IC);
+        error_value = add_ExternUsage_node(extern_head, label_node->name, cur_IC);
         if (error_value == MEMORY_ALLOCATION_ERROR) {
             fprintf(stderr, "Error: Memory allocation failed for extern usage node\n");
             data->error_flag = 1;
-            return -1;
+            return MEMORY_ALLOCATION_ERROR;
         }
         if (error_value == -1) {
             fprintf(stderr, "Error: Failed to add extern usage for label '%s'\n", label_node->name);

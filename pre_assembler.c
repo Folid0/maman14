@@ -57,6 +57,10 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
             if (error_value == MEMORY_ALLOCATION_ERROR){
                 fprintf(stderr, "memmory allocation ERROR");
                 error_flag = 1;
+                fclose(input_file_as); /*closing files*/
+                fclose(output_file_am);
+                free_macro_table(mcro_node_head); /*free the mcro list*/
+                remove(file_name_am); /*remove the output file*/
                 return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
             }
             else if (error_value == -1){ /*there is an error with the mcro*/
@@ -68,9 +72,13 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
                 if (error_value == MEMORY_ALLOCATION_ERROR){
                     fprintf(stderr, "memmory allocation ERROR");
                     error_flag = 1;
+                    fclose(input_file_as); /*closing files*/
+                    fclose(output_file_am);
+                    free_macro_table(mcro_node_head); /*free the mcro list*/
+                    remove(file_name_am); /*remove the output file*/
                     return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
                 }
-                else if (add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx) == -1){
+                else if (error_value == -1){
                     fprintf(stderr, "Error adding line block to macro at line: %d", line_idx);
                     error_flag = 1;
                 }
@@ -106,4 +114,3 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
 
     return 1; /*successful*/
 }
-

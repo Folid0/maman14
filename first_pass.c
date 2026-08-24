@@ -59,6 +59,7 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx, Macro
 int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
     char cur_line[MAX_LINE_LEN];
     int line_idx = 0;
+    int process_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
     LabelNode *tmp;
 
     /*initilsised data*/
@@ -79,7 +80,11 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
         }
         else{  
             /* Process the current line */
-            if (process_line_first_pass(cur_line, data, line_idx, macro_head) == -1) {
+            process_value = process_line_first_pass(cur_line, data, line_idx, macro_head);
+            if (process_value == MEMORY_ALLOCATION_ERROR) {
+                return MEMORY_ALLOCATION_ERROR;
+            }
+            else if (process_value == -1) {
                 fprintf(stderr, "Error processing line %d.\n", line_idx);
                 data->error_flag = 1; /* Set error flag */
             }

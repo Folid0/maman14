@@ -605,57 +605,58 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
         return -1;
     }
 
-switch (type) {
-    case CODE:
-        error_value = add_label(&data->label_head, label_name, data->IC, CODE);
-        if (error_value != 1) {
-            fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
-            return error_value;
-        }
+    switch (type) {
+        case CODE:
+            error_value = add_label(&data->label_head, label_name, data->IC, CODE);
+            if (error_value != 1) {
+                fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
+                return error_value;
+            }
 
-        error_value = handle_CODE(line, &command_idx, data);
-        if (error_value != 1) {
-            fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
-            return error_value;
-        }
-        break;
+            error_value = handle_CODE(line, &command_idx, data);
+            if (error_value != 1) {
+                fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
+                return error_value;
+            }
+            break;
 
-    case DATA:
-        error_value = add_label(&data->label_head, label_name, data->DC, DATA);
-        if (error_value != 1) {
-            fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
-            return error_value;
-        }
+        case DATA:
+            error_value = add_label(&data->label_head, label_name, data->DC, DATA);
+            if (error_value != 1) {
+                fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
+                return error_value;
+            }
 
-        error_value = handle_data_directive(line, &command_idx, data);
-        if (error_value != 1) {
-            fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
-            return error_value;
-        }
-        break;
+            error_value = handle_data_directive(line, &command_idx, data);
+            if (error_value != 1) {
+                fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
+                return error_value;
+            }
+            break;
 
-    case EXTERN:
-        /*igonore the label as there is no meaning*/
-        error_value = encode_extern_directive(line, &command_idx, command_name, data);
-        if (error_value != 1) {
-            fprintf(stderr, "Error: Failed to handle extern directive for label '%s' at line %d.\n", label_name, line_idx);
-            return error_value;
-        }
-        break;
+        case EXTERN:
+            /*igonore the label as there is no meaning*/
+            error_value = encode_extern_directive(line, &command_idx, command_name, data);
+            if (error_value != 1) {
+                fprintf(stderr, "Error: Failed to handle extern directive for label '%s' at line %d.\n", label_name, line_idx);
+                return error_value;
+            }
+            break;
 
-    case ENTRY:
-        /*ignore the label as there is no meaning*/
-        error_value = handle_entry_directive_first_pass(line, &command_idx, command_name, data);
-        if (error_value != 1) {
-            fprintf(stderr, "Error: Failed to handle entry directive for label '%s' at line %d.\n", label_name, line_idx);
-            return error_value;
-        }
-        break;
+        case ENTRY:
+            /*ignore the label as there is no meaning*/
+            error_value = handle_entry_directive_first_pass(line, &command_idx, command_name, data);
+            if (error_value != 1) {
+                fprintf(stderr, "Error: Failed to handle entry directive for label '%s' at line %d.\n", label_name, line_idx);
+                return error_value;
+            }
+            break;
 
-    default:
-        fprintf(stderr, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
-        return -1; /* Unknown label type */
-}
+        default:
+            fprintf(stderr, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
+            return -1; /* Unknown label type */
+    }
+    return 1; /* Success */
 }
 
 

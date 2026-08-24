@@ -106,6 +106,7 @@ void free_macro_table(MacroNode *head){
 int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,int *line_idx){
     char word[MAX_LINE_LEN];
     int word_idx = 0;
+    int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
 
     int flag = 0; /*0 for loop to run and 1 to break*/
     while (flag == 0 && fgets(cur_line, MAX_LINE_LEN, input_file_as)!= NULL){
@@ -123,8 +124,12 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
         }
         
         else{
-            if (add_line_to_macro(node, cur_line) == -1){ /*checks memory allocation error*/
+            error_value = add_line_to_macro(node, cur_line);
+            if (error_value == MEMORY_ALLOCATION_ERROR){ /*checks memory allocation error*/
                 fprintf(stderr, "memmory allocation ERROR");
+                return MEMORY_ALLOCATION_ERROR;
+            }
+            else if (error_value == -1){
                 return -1;
             }
         }
