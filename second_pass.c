@@ -31,7 +31,7 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
     if (is_label(word)) {
         command_start_idx = word_idx; /* Set the index to the start of the command */
         if (get_next_word(cur_line, &word_idx, word) == 0) { /* Get the next word after the label */
-            fprintf(stderr, "Error: Missing instruction or directive after label at line %d.\n", line_idx);
+            fprintf(stdout, "Error: Missing instruction or directive after label at line %d.\n", line_idx);
             data->error_flag = 1;
             return -1;
         }
@@ -39,7 +39,7 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
     if (strcmp(word, ".entry") == 0) {
         /* Handle .entry directive */
         if (handle_entry_directive_second_pass(cur_line, command_start_idx, data) == -1) {
-            fprintf(stderr, "Error: Failed to handle .entry directive at line %d.\n", line_idx);
+            fprintf(stdout, "Error: Failed to handle .entry directive at line %d.\n", line_idx);
             data->error_flag = 1;
             return -1;
         }
@@ -80,7 +80,7 @@ int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern
     rewind(am_file); /* Reset file pointer*/
 
     if (extern_head == NULL) {
-        fprintf(stderr, "Error: no pointer was given for extern usage list.\n");
+        fprintf(stdout, "Error: no pointer was given for extern usage list.\n");
         return -1;
     }
     *extern_head = NULL;
@@ -88,8 +88,8 @@ int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern
     while (fgets(cur_line, sizeof(cur_line), am_file) != NULL) {
         line_idx++;
         process_value = process_line_second_pass(cur_line, data, line_idx, &cur_IC, &cur_DC, extern_head);
-        if (process_value != 1) {
-            fprintf(stderr, "Error: Failed to process line %d in second pass.\n", line_idx);
+        if (process_value < 0) {
+            fprintf(stdout, "Error: Failed to process line %d in second pass.\n", line_idx);
             data->error_flag = 1;
             if (process_value == MEMORY_ALLOCATION_ERROR) {
                 return MEMORY_ALLOCATION_ERROR; /* Stop processing on MEMORY_ALLOCATION_ERROR */
@@ -105,7 +105,7 @@ int handle_entry_directive_second_pass(char *line, int word_idx, AssemblerData *
     LabelNode *label_node;
 
     if (is_entry_directive(line, word_idx) == 0) {
-        fprintf(stderr, "Error: Not an .entry directive\n");
+        fprintf(stdout, "Error: Not an .entry directive\n");
         data->error_flag = 1;
         return -1;
     }
@@ -115,13 +115,13 @@ int handle_entry_directive_second_pass(char *line, int word_idx, AssemblerData *
 
     /* Get the label name */
     if (get_next_word(line, &word_idx, label_name) == 0) {
-        fprintf(stderr, "Error: Missing label for .entry directive\n");
+        fprintf(stdout, "Error: Missing label for .entry directive\n");
         data->error_flag = 1;
         return -1;
     }
 
     if (is_valid_label_name(label_name) == 0) {
-        fprintf(stderr, "Error: Invalid label '%s' for .entry\n", label_name);
+        fprintf(stdout, "Error: Invalid label '%s' for .entry\n", label_name);
         data->error_flag = 1;
         return -1;
     }
@@ -129,12 +129,12 @@ int handle_entry_directive_second_pass(char *line, int word_idx, AssemblerData *
     /* check if the label exists in the symbol table */
     label_node = find_label(data->label_head, label_name);
     if (label_node == NULL) {
-        fprintf(stderr, "Error: Label '%s' not found for .entry directive\n", label_name);
+        fprintf(stdout, "Error: Label '%s' not found for .entry directive\n", label_name);
         data->error_flag = 1;
         return -1;
     }
     if (label_node->type == EXTERN) {
-        fprintf(stderr, "Error: Label '%s' defined as .extern cannot be marked as .entry\n", label_name);
+        fprintf(stdout, "Error: Label '%s' defined as .extern cannot be marked as .entry\n", label_name);
         data->error_flag = 1;
         return -1;
     }
@@ -151,13 +151,13 @@ int get_branch_value(char *line, AssemblerData *data, int cur_IC, char *label_na
     LabelNode *label_node;
 
     if (get_next_word(line, word_idx, name) == 0) {
-        fprintf(stderr, "Error: Missing instruction name\n");
+        fprintf(stdout, "Error: Missing instruction name\n");
         data->error_flag = 1;
         return -1;
     }
 
     if (is_branch_instruction(name) == 0) {
-        fprintf(stderr, "Error: Not a branch instruction\n");
+        fprintf(stdout, "Error: Not a branch instruction\n");
         data->error_flag = 1;
         return -1;
     }
@@ -165,25 +165,25 @@ int get_branch_value(char *line, AssemblerData *data, int cur_IC, char *label_na
     /*get the operands*/
     if (get_next_command(line, word_idx, operand1)== 0 || get_next_command(line, word_idx, operand2) == 0
     || get_next_command(line, word_idx, label_name) == 0) {
-        fprintf(stderr, "Error: Missing operands for branch instruction '%s'\n", name);
+        fprintf(stdout, "Error: Missing operands for branch instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
 
     if (is_valid_label_name(label_name) == 0) {
-        fprintf(stderr, "Error: Invalid label '%s' for branch instruction\n", label_name);
+        fprintf(stdout, "Error: Invalid label '%s' for branch instruction\n", label_name);
         data->error_flag = 1;
         return -1;
     }
 
     label_node = find_label(data->label_head, label_name);
     if (label_node == NULL) {
-        fprintf(stderr, "Error: Label '%s' not found for branch instruction\n", label_name);
+        fprintf(stdout, "Error: Label '%s' not found for branch instruction\n", label_name);
         data->error_flag = 1;
         return -1;
     }
     if (label_node->type == EXTERN) {
-        fprintf(stderr, "Error: Label '%s' is defined as .extern and cannot be used in branch instruction\n", label_name);
+        fprintf(stdout, "Error: Label '%s' is defined as .extern and cannot be used in branch instruction\n", label_name);
         data->error_flag = 1;
         return -1;
     }
@@ -191,7 +191,7 @@ int get_branch_value(char *line, AssemblerData *data, int cur_IC, char *label_na
     *offset = label_node->address - cur_IC ;
     
     if (*offset < -32768 || *offset > 32767) {
-        fprintf(stderr, "Error: Offset %d for label '%s' is out of range for branch instruction\n", *offset, label_name);
+        fprintf(stdout, "Error: Offset %d for label '%s' is out of range for branch instruction\n", *offset, label_name);
         data->error_flag = 1;
         return -1;
     }
@@ -221,26 +221,26 @@ int get_j_type_value(char *line,  char *label_name, int *word_idx, int *op_code,
     char name[MAX_LINE_LEN];
 
     if (get_next_word(line, word_idx, name) == 0) {
-        fprintf(stderr, "Error: Missing instruction name\n");
+        fprintf(stdout, "Error: Missing instruction name\n");
         data->error_flag = 1;
         return -1;
     }
 
     if (!is_j_type_instruction(name)) {
-        fprintf(stderr, "Error: '%s' is not a J-type instruction\n", name);
+        fprintf(stdout, "Error: '%s' is not a J-type instruction\n", name);
         data->error_flag = 1;
         return -1;
     }
     *op_code = get_opcode(name);
     if (*op_code == -1) {
-        fprintf(stderr, "Error: Invalid J-type instruction '%s'\n", name);
+        fprintf(stdout, "Error: Invalid J-type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
 
 
     if (get_next_command(line, word_idx, operand) == 0) {
-        fprintf(stderr, "Error: Missing operand for J-type instruction '%s'\n", name);
+        fprintf(stdout, "Error: Missing operand for J-type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -264,7 +264,7 @@ int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC,
 
     label_node = find_label(data->label_head, operand);
     if (label_node == NULL) {
-        fprintf(stderr, "Error: Label '%s' not found for J-type instruction\n", operand);
+        fprintf(stdout, "Error: Label '%s' not found for J-type instruction\n", operand);
         data->error_flag = 1;
         return -1;
     }   
@@ -272,12 +272,12 @@ int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC,
     if (label_node->type == EXTERN) {
         error_value = add_ExternUsage_node(extern_head, label_node->name, cur_IC);
         if (error_value == MEMORY_ALLOCATION_ERROR) {
-            fprintf(stderr, "Error: Memory allocation failed for extern usage node\n");
+            fprintf(stdout, "Error: Memory allocation failed for extern usage node\n");
             data->error_flag = 1;
             return MEMORY_ALLOCATION_ERROR;
         }
         if (error_value == -1) {
-            fprintf(stderr, "Error: Failed to add extern usage for label '%s'\n", label_node->name);
+            fprintf(stdout, "Error: Failed to add extern usage for label '%s'\n", label_node->name);
             data->error_flag = 1;
             return -1;
         }

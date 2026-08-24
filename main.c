@@ -18,6 +18,8 @@
 int run_on_files(int num_of_files, char *file_paths[]) {
     int max_file_path_len = find_max_file_path_length(file_paths, num_of_files);
     int i;
+    int error_flag = 0; /*flag to indicate if there was an error in any file*/
+    int cur_run_value; /*used to store the return value of run_file*/
 
     if (max_file_path_len == 0) { /*error*/
         return -1;
@@ -29,13 +31,18 @@ int run_on_files(int num_of_files, char *file_paths[]) {
             fprintf(stdout, "Error: file_paths[%d] is NULL\n", i);
         }
         else{
-            if (run_file(file_paths[i], max_file_path_len) == MEMORY_ALLOCATION_ERROR) {
+            cur_run_value = run_file(file_paths[i], max_file_path_len);
+            if (cur_run_value == MEMORY_ALLOCATION_ERROR) {
                 fprintf(stdout, "Error: Memory allocation failed while processing file %s\n", file_paths[i]);
                 return MEMORY_ALLOCATION_ERROR; /* Stop processing further files */
             }
+            else if (cur_run_value != 1) {
+                fprintf(stdout, "Error: Failed to assemble file %s\n", file_paths[i]);
+                error_flag = 1; /* Set the error flag but continue processing other files */
+            }
         }
     }
-    return 1; /*success*/
+    return (error_flag == 0) ? 1 : -1;
 
 }
 
@@ -55,7 +62,7 @@ int run_file(char *file_path, int max_file_path_len) {
     char *ob_file_name = (char *) malloc(max_file_path_len);
 
     if (initialize_assembler_data(&data) == -1) {
-        fprintf(stderr, "Error: Failed to initialize assembler data\n");
+        fprintf(stdout, "Error: Failed to initialize assembler data\n");
         free_everything(&data, macro_head, extern_head, am_file_name, base_file_name, ob_file_name, ext_file_name, ent_file_name);
         return -1; /* Error */
     }

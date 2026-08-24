@@ -122,8 +122,8 @@ int write_ob_file(FILE *ob_file, const AssemblerData *data){
     code_size = data->IC - 100; /* Assuming IC starts at 100 */
     data_size = data->DC;
 
-    fprintf(ob_file, "%d %d\n", code_size, data_size);    
-
+    fprintf(ob_file, "     %d %d\n", code_size, data_size);
+    
     for (code_idx = 0; code_idx < code_size; code_idx+=4) {
         fprintf(ob_file, "%04d", 100 + code_idx); /* writing the address */
 

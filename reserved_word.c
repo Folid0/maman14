@@ -40,6 +40,23 @@ int is_directive(const char *word) {
     return 0;
 }
 
+/*returns 1 if the word is a directive without dots, else returns 0*/
+int is_directive_without_dots(const char *word) {
+    int i;
+    const char * const directives[] = {
+        "db", "dh", "dw", "asciz", "entry", "extern"
+    };
+
+    int num_directives = sizeof(directives) / sizeof(directives[0]);
+    
+    for (i = 0; i <num_directives; i++){
+        if (strcmp(directives[i], word) == 0){
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /*returns 1 if the word is a data directive, else returns 0*/
 /*".db", ".dh", ".dw", ".asciz"*/
 int is_data_directive(const char *word) {
@@ -98,7 +115,7 @@ int is_macro_keyword(const char *word) {
 
 /*return 1 if is a reserved word, else returns 0*/
 int is_reserved_word(const char *word){
-    if (is_instruction(word) || is_directive(word) || is_register(word) || is_macro_keyword(word)){
+    if (is_instruction(word) || is_directive(word) || is_register(word) || is_macro_keyword(word) || is_directive_without_dots(word)){
         return 1;
     }
     return 0;

@@ -77,13 +77,14 @@ int encode_r_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
 
     if (rs == -1 || rt == -1 || rd == -1) {
         /*invalid register*/
+        fprintf(stdout, "Error: invalid register in r type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
 
     /* Verify there is no extra garbage text after the operands */  
     if (get_next_word(line, word_idx, word) != 0) {
-        fprintf(stderr, "Error: text after instruction '%s'\n", name);
+        fprintf(stdout, "Error: text after instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -95,6 +96,12 @@ int encode_r_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     machine_code |= (funct << 6);
 
     img_idx = data->IC - 100; 
+
+    if (!does_image_have_space(img_idx, 4)) {
+        fprintf(stdout, "Error: Not enough space in code image to encode instruction '%s'\n", name);
+        data->error_flag = 1;
+        return -1;
+    }
 
     data->code_image[img_idx]     = machine_code & 0xFF;         
     data->code_image[img_idx + 1] = (machine_code >> 8) & 0xFF; 
@@ -138,7 +145,7 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
         get_next_command(line, word_idx, operand2) == 0 ||
         get_next_command(line, word_idx, operand3) == 0) {
         
-        fprintf(stderr, "Error: Missing or wrong operands for I-type instruction '%s'\n", name);
+        fprintf(stdout, "Error: Missing or wrong operands for I-type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -151,13 +158,13 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
         immed = 0;
 
         if (rs == -1 || rt == -1) {
-            fprintf(stderr, "Error: Invalid registers for branch instruction '%s'\n", name);
+            fprintf(stdout, "Error: Invalid registers for branch instruction '%s'\n", name);
             data->error_flag = 1;
             return -1;
         }
 
         if (is_valid_label_name(operand3) == 0) {
-            fprintf(stderr,
+            fprintf(stdout,
                     "Error: Invalid branch target '%s' for instruction '%s'\n", operand3, name);
             data->error_flag = 1;
             return -1;
@@ -173,7 +180,7 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
         }
 
         if (endptr == operand2 || *endptr != '\0' || immed_tmp < -32768L || immed_tmp > 32767L) {
-            fprintf(stderr, "Error: Invalid immediate value '%s' for instruction '%s'\n", operand2, name);
+            fprintf(stdout, "Error: Invalid immediate value '%s' for instruction '%s'\n", operand2, name);
             data->error_flag = 1;
             return -1;
         }
@@ -182,7 +189,7 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
         rt = get_register_num(operand3);
 
         if (rs == -1 || rt == -1) {
-            fprintf(stderr, "Error: Invalid registers for instruction '%s'\n", name);
+            fprintf(stdout, "Error: Invalid registers for instruction '%s'\n", name);
             data->error_flag = 1;
             return -1;
         }
@@ -190,7 +197,7 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
 
     /* Verify there is no extra garbage text after the operands */
     if (get_next_word(line, word_idx, extra) != 0) {
-        fprintf(stderr, "Error: text after instruction '%s'\n", name);
+        fprintf(stdout, "Error: text after instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -203,6 +210,12 @@ int encode_i_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
 
     /*starting index in the code_image array*/
     img_idx = data->IC - 100;
+
+    if (!does_image_have_space(img_idx, 4)) {
+        fprintf(stdout, "Error: Not enough space in code image to encode instruction '%s'\n", name);
+        data->error_flag = 1;
+        return -1;
+    }
 
     data->code_image[img_idx]     = machine_code & 0xFF;         
     data->code_image[img_idx + 1] = (machine_code >> 8) & 0xFF;  
@@ -237,7 +250,7 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     /* op_code 63 is "hlt", which takes absolutely no operands */
     if (op_code == 63) {
         if (get_next_word(line, word_idx, extra) != 0) {
-            fprintf(stderr, "Error: Extraneous text after instruction 'hlt'\n");
+            fprintf(stdout, "Error: Extraneous text after instruction 'hlt'\n");
             data->error_flag = 1;
             return -1;
         }
@@ -245,7 +258,7 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     else {
         /* read the next word (the operand for jmp, la, or call) */
         if (get_next_command(line, word_idx, operand) == 0) {
-            fprintf(stderr, "Error: Missing operand for J-type instruction '%s'\n", name);
+            fprintf(stdout, "Error: Missing operand for J-type instruction '%s'\n", name);
             data->error_flag = 1;
             return -1;
         }
@@ -259,7 +272,7 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
             else {
                 /* Operand is a label: Verify it does not start with a number */
                 if (is_valid_label_name(operand) == 0) {
-                    fprintf(stderr, "Error: Invalid operand '%s' for 'jmp'. Expected a valid label or register.\n", operand);
+                    fprintf(stdout, "Error: Invalid operand '%s' for 'jmp'. Expected a valid label or register.\n", operand);
                     data->error_flag = 1;
                     return -1;
                 }
@@ -270,14 +283,14 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
             /* la (31) and call (32) */
             /* These instructions take a label, not a register */
             if (is_register(operand)) {
-                fprintf(stderr, "Error: Instruction '%s' strictly requires a label, not a register.\n", name);
+                fprintf(stdout, "Error: Instruction '%s' strictly requires a label, not a register.\n", name);
                 data->error_flag = 1;
                 return -1;
             }
             
             /* Verify it starts with a letter */
             if (is_valid_label_name(operand) == 0) {
-                fprintf(stderr, "Error: Invalid operand '%s' for instruction '%s'. Expected a valid label.\n", operand, name);
+                fprintf(stdout, "Error: Invalid operand '%s' for instruction '%s'. Expected a valid label.\n", operand, name);
                 data->error_flag = 1;
                 return -1;
             }
@@ -286,7 +299,7 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
 
         /* Verify there is no extra garbage text after the operand */
         if (get_next_word(line, word_idx, extra) != 0) {
-            fprintf(stderr, "Error: text after instruction '%s'\n", name);
+            fprintf(stdout, "Error: text after instruction '%s'\n", name);
             data->error_flag = 1;
             return -1;
         }
@@ -295,6 +308,11 @@ int encode_j_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
     /* Calculate the starting index in the code_image array */
     img_idx = data->IC - 100;
 
+    if (!does_image_have_space(img_idx, 4)) {
+        fprintf(stdout, "Error: Not enough space in code image to encode instruction '%s'\n", name);
+        data->error_flag = 1;
+        return -1;
+    }
     /* Write the 32-bit machine code into memory (Little-Endian format) */
     data->code_image[img_idx]     = machine_code & 0xFF;         /* Bits 0-7 */
     data->code_image[img_idx + 1] = (machine_code >> 8) & 0xFF;  /* Bits 8-15 */
@@ -321,7 +339,7 @@ int handle_data_directive(char *line, int *word_idx, AssemblerData *data) {
         return encode_db_dw_db_directive(line, word_idx, name, data);
     } 
     else {
-        fprintf(stderr, "Error: Unknown data directive '%s'\n", name);
+        fprintf(stdout, "Error: Unknown data directive '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -336,7 +354,7 @@ int encode_asciz_directive(char *line, int *word_idx,char *name, AssemblerData *
     *word_idx = skip_whitespace(line, *word_idx);
     
     if (line[*word_idx] != '"') {
-        fprintf(stderr, "Error: .asciz string must start with a quote\n");
+        fprintf(stdout, "Error: .asciz string must start with a quote\n");
         data->error_flag = 1; 
         return -1;
     }
@@ -345,10 +363,16 @@ int encode_asciz_directive(char *line, int *word_idx,char *name, AssemblerData *
     /* Read characters until closing quote or end of line */
     while(line[*word_idx] != '\0' && line[*word_idx] != '\n' && line[*word_idx] != '"') {
         if ((unsigned char)line[*word_idx] < 32 || (unsigned char)line[*word_idx] > 126) { /*check for non ASCII characters*/
-            fprintf(stderr, "Error: .asciz contains a non-printable ASCII character\n");
+            fprintf(stdout, "Error: .asciz contains a non-printable ASCII character\n");
             data->error_flag = 1;
             return -1;
         }
+        if (!does_image_have_space(data->DC, 1)) {
+            fprintf(stdout, "Error: Not enough space in data image to encode .asciz string\n");
+            data->error_flag = 1;
+            return -1;
+        }
+
         data->data_image[data->DC++] = line[*word_idx];
         (*word_idx)++;
     }
@@ -359,18 +383,24 @@ int encode_asciz_directive(char *line, int *word_idx,char *name, AssemblerData *
     }
 
     if (end_quote == 0) {
-        fprintf(stderr, "Error: .asciz string missing closing quote\n");
+        fprintf(stdout, "Error: .asciz string missing closing quote\n");
         data->error_flag = 1; 
         return -1;
     }
     
+
+    if (!does_image_have_space(data->DC, 1)) {
+        fprintf(stdout, "Error: Not enough space in data image\n");
+        data->error_flag = 1;
+        return -1;
+    }
     /* add null terminator */
     data->data_image[data->DC++] = '\0';
     
     trash[0] = '\0'; /* Clear the trash buffer */
     /* Check for trailing garbage text */
     if (get_next_word(line, word_idx, trash) != 0) {
-        fprintf(stderr, "Error: text after instruction '%s'\n", name);
+        fprintf(stdout, "Error: text after instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -389,7 +419,7 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
 
     size = (strcmp(name, ".db") == 0) ? 1 : ((strcmp(name, ".dh") == 0) ? 2 : (strcmp(name, ".dw") == 0) ? 4 : 0);
     if (size == 0) {
-        fprintf(stderr, "Error: Unknown directive '%s'\n", name);
+        fprintf(stdout, "Error: Unknown directive '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -410,7 +440,7 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
         
             if (state == 0) {
                 if (line[*word_idx] == ',') {
-                    fprintf(stderr, "Error: unexpected comma before number\n");
+                    fprintf(stdout, "Error: unexpected comma before number\n");
                     data->error_flag = 1; 
                     return -1;
                 }
@@ -419,17 +449,22 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
                 val = strtol(&line[*word_idx], &endptr, 10);
 
                 if (endptr == &line[*word_idx]) {
-                    fprintf(stderr, "Error: expected an integer\n");
+                    fprintf(stdout, "Error: expected an integer\n");
                     data->error_flag = 1; 
                     return -1;
                 }
                 
                 if (val < min_value || val > max_value) {
-                    fprintf(stderr, "Error: value %ld out of range for directive '%s'\n", val, name);
+                    fprintf(stdout, "Error: value %ld out of range for directive '%s'\n", val, name);
                     data->error_flag = 1; 
                     return -1;
                 }
                 
+                if (!does_image_have_space(data->DC, size)) {
+                    fprintf(stdout, "Error: Not enough space in data image\n");
+                    data->error_flag = 1;
+                    return -1;
+                }
                 /* Write to data_image*/
                 for (i = 0; i < size; i++) {
                     data->data_image[data->DC++] = (val >> (i * 8)) & 0xFF;
@@ -443,7 +478,7 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
                     state = 0; /* Comma found, next we expect a number */
                     (*word_idx)++;
                 } else {
-                    fprintf(stderr, "Error: missing comma between numbers\n");
+                    fprintf(stdout, "Error: missing comma between numbers\n");
                     data->error_flag = 1; 
                     return -1;
                 }
@@ -452,7 +487,7 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
     }
 
     if (state == 0) {
-        fprintf(stderr, "Error: trailing comma without a number\n");
+        fprintf(stdout, "Error: trailing comma without a number\n");
         data->error_flag = 1; 
         return -1;
     }
@@ -469,26 +504,26 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
     int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
     
     if(get_next_word(line, word_idx, name) == 0 && strcmp(name, ".extern") != 0) { /*getting the idx of the first word, which is the command name*/
-        fprintf(stderr, "Error: Missing command for .extern directive\n");
+        fprintf(stdout, "Error: Missing command for .extern directive\n");
         data->error_flag = 1;
         return -1;
     }
     /*get label name*/
     if (get_next_word(line, word_idx, label_name) == 0) {
-        fprintf(stderr, "Error: Missing label for .extern directive\n");
+        fprintf(stdout, "Error: Missing label for .extern directive\n");
         data->error_flag = 1;
         return -1;
     }
 
     if (is_valid_label_name(label_name) == 0) {
-        fprintf(stderr, "Error: Invalid label '%s' for .extern\n", label_name);
+        fprintf(stdout, "Error: Invalid label '%s' for .extern\n", label_name);
         data->error_flag = 1;
         return -1;
     }
 
     /* Check for trailing garbage text */
    if (get_next_word(line, word_idx, trash) != 0) {
-        fprintf(stderr, "Error: text after .extern directive\n");
+        fprintf(stdout, "Error: text after .extern directive\n");
         data->error_flag = 1;
         return -1;
     }
@@ -499,7 +534,7 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
             skip = 1;
             if (tmp->type != EXTERN) {
                 data->error_flag = 1;
-                fprintf(stderr, "Error: double definition of label directive and not both extern type\n");
+                fprintf(stdout, "Error: double definition of label directive and not both extern type\n");
                 return -1;
             }
         }
@@ -510,12 +545,12 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
         /* Add the label to the symbol table with EXTERN type */
         error_value = add_label(&data->label_head, label_name, 0, EXTERN);
         if (error_value == MEMORY_ALLOCATION_ERROR) {
-            fprintf(stderr, "Memory allocation error while adding label '%s' to symbol table\n",label_name);
+            fprintf(stdout, "Memory allocation error while adding label '%s' to symbol table\n",label_name);
             data->error_flag = 1;
             return MEMORY_ALLOCATION_ERROR;
         }
         if (error_value == -1) {
-            fprintf(stderr, "Error: Failed to add label '%s' to symbol table\n", label_name);
+            fprintf(stdout, "Error: Failed to add label '%s' to symbol table\n", label_name);
             data->error_flag = 1;
             return -1;
         }
@@ -534,21 +569,21 @@ int handle_entry_directive_first_pass(char *line, int *word_idx, char *name, Ass
     LabelNode *tmp_label;
 
     if(get_next_word(line, word_idx, name) == 0 && strcmp(name, ".entry") != 0) { /*getting the idx of the first word, which is the command name*/
-        fprintf(stderr, "Error: Missing command for .entry directive\n");
+        fprintf(stdout, "Error: Missing command for .entry directive\n");
         data->error_flag = 1;
         return -1;
     }
 
     /*get label name*/
     if (get_next_word(line, word_idx, label_name) == 0) {
-        fprintf(stderr, "Error: Missing label for .entry directive\n");
+        fprintf(stdout, "Error: Missing label for .entry directive\n");
         data->error_flag = 1;
         return -1;
     }
 
     /* Verify label syntax */
     if (is_valid_label_name(label_name) == 0) {
-        fprintf(stderr, "Error: Invalid label '%s' for .entry\n", label_name);
+        fprintf(stdout, "Error: Invalid label '%s' for .entry\n", label_name);
         data->error_flag = 1;
         return -1;
     }
@@ -556,7 +591,7 @@ int handle_entry_directive_first_pass(char *line, int *word_idx, char *name, Ass
     tmp_label = find_label(data->label_head, label_name); /*make sure the label dosnt already exist as extern*/
     if (tmp_label != NULL) {
         if (tmp_label->type == EXTERN) {
-            fprintf(stderr, "Error: Label '%s' defined as .extern cannot be marked as .entry\n", label_name);
+            fprintf(stdout, "Error: Label '%s' defined as .extern cannot be marked as .entry\n", label_name);
             data->error_flag = 1;
             return -1;
         }
@@ -565,7 +600,7 @@ int handle_entry_directive_first_pass(char *line, int *word_idx, char *name, Ass
 
     /* Check for trailing garbage text */
     if (get_next_word(line, word_idx, extra) != 0) {
-        fprintf(stderr, "Error: text after .entry directive\n");
+        fprintf(stdout, "Error: text after .entry directive\n");
         data->error_flag = 1;
         return -1;
     }
@@ -587,13 +622,13 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
 
     /* setting label name */
     if (get_label_name(line, &word_idx, label_name) == -1) {
-        fprintf(stderr, "Error: Invalid label name at line %d.\n", line_idx);
+        fprintf(stdout, "Error: Invalid label name at line %d.\n", line_idx);
         return -1;
     }
     
 
     if (find_macro(macro_head, label_name) != NULL) {
-        fprintf(stderr, "Error: Label '%s' is already defined as a macro at line %d.\n", label_name, line_idx);
+        fprintf(stdout, "Error: Label '%s' is already defined as a macro at line %d.\n", label_name, line_idx);
         return -1;
     }
     command_idx = word_idx; /*the index after the label name*/
@@ -601,7 +636,7 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
     type = get_label_type(command_name); /*setting type*/
 
     if (find_label(data->label_head, label_name) != NULL) { /* Check if the label already exists in the symbol table */
-        fprintf(stderr, "Error: Label '%s' is already defined at line %d.\n", label_name, line_idx);
+        fprintf(stdout, "Error: Label '%s' is already defined at line %d.\n", label_name, line_idx);
         return -1;
     }
 
@@ -609,13 +644,13 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
         case CODE:
             error_value = add_label(&data->label_head, label_name, data->IC, CODE);
             if (error_value != 1) {
-                fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
+                fprintf(stdout, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
                 return error_value;
             }
 
             error_value = handle_CODE(line, &command_idx, data);
             if (error_value != 1) {
-                fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
+                fprintf(stdout, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
                 return error_value;
             }
             break;
@@ -623,13 +658,13 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
         case DATA:
             error_value = add_label(&data->label_head, label_name, data->DC, DATA);
             if (error_value != 1) {
-                fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
+                fprintf(stdout, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
                 return error_value;
             }
 
             error_value = handle_data_directive(line, &command_idx, data);
             if (error_value != 1) {
-                fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
+                fprintf(stdout, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
                 return error_value;
             }
             break;
@@ -638,7 +673,7 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
             /*igonore the label as there is no meaning*/
             error_value = encode_extern_directive(line, &command_idx, command_name, data);
             if (error_value != 1) {
-                fprintf(stderr, "Error: Failed to handle extern directive for label '%s' at line %d.\n", label_name, line_idx);
+                fprintf(stdout, "Error: Failed to handle extern directive for label '%s' at line %d.\n", label_name, line_idx);
                 return error_value;
             }
             break;
@@ -647,13 +682,13 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
             /*ignore the label as there is no meaning*/
             error_value = handle_entry_directive_first_pass(line, &command_idx, command_name, data);
             if (error_value != 1) {
-                fprintf(stderr, "Error: Failed to handle entry directive for label '%s' at line %d.\n", label_name, line_idx);
+                fprintf(stdout, "Error: Failed to handle entry directive for label '%s' at line %d.\n", label_name, line_idx);
                 return error_value;
             }
             break;
 
         default:
-            fprintf(stderr, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
+            fprintf(stdout, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
             return -1; /* Unknown label type */
     }
     return 1; /* Success */
@@ -665,7 +700,7 @@ int encode_branch_instruction_second_pass(int offset, AssemblerData *data, int c
     unsigned long machine_code;
 
     if (code_idx < 0 || code_idx + 3 >= MAX_MEM_SIZE) { /*check if the code index is valid*/
-        fprintf(stderr, "Error: Invalid code index %d for branch instruction at IC %d\n", code_idx, cur_IC);
+        fprintf(stdout, "Error: Invalid code index %d for branch instruction at IC %d\n", code_idx, cur_IC);
         data->error_flag = 1;
         return -1;
     }
@@ -692,7 +727,7 @@ int encode_j_type_instruction_second_pass(char *line, LabelNode *label_node, Ass
     int code_idx = *cur_IC - 100;
     
     if (code_idx < 0 || code_idx + 3 >= MAX_MEM_SIZE) { /*check if the code index is valid*/
-        fprintf(stderr, "Error: Invalid code index %d for J-type instruction at IC %d\n", code_idx, *cur_IC);
+        fprintf(stdout, "Error: Invalid code index %d for J-type instruction at IC %d\n", code_idx, *cur_IC);
         data->error_flag = 1;
         return -1;
     }
@@ -715,3 +750,4 @@ int encode_j_type_instruction_second_pass(char *line, LabelNode *label_node, Ass
     
     return 1;
 }
+

@@ -10,7 +10,7 @@
 int add_label(LabelNode **head, char *name, int address, LabelType type) {
     LabelNode *new_node = (LabelNode *)malloc(sizeof(LabelNode));
     if (new_node == NULL) {
-        fprintf(stderr, "Memory allocation failed for new label node.\n");
+        fprintf(stdout, "Memory allocation failed for new label node.\n");
         return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
     }
     /* Initialize the new label node */
@@ -127,7 +127,7 @@ int is_valid_label_name(const char *name)
 int add_ExternUsage_node(ExternUsageNode **head, char *name, long address) {
     ExternUsageNode *new_node = (ExternUsageNode *)malloc(sizeof(ExternUsageNode));
     if (new_node == NULL) {
-        fprintf(stderr, "Memory allocation failed for new extern usage node.\n");
+        fprintf(stdout, "Memory allocation failed for new extern usage node.\n");
         return MEMORY_ALLOCATION_ERROR; /* Memory allocation failed */
     }
 
@@ -178,7 +178,7 @@ void free_label_table(LabelNode *head){
 /*returns 1 if successful, -1 if failed*/
 int initialize_assembler_data(AssemblerData *data) {
     if (data == NULL) {
-        fprintf(stderr, "Error: AssemblerData pointer is NULL\n");
+        fprintf(stdout, "Error: AssemblerData pointer is NULL\n");
         return -1;
     }
     memset(data->code_image, 0, sizeof(data->code_image));

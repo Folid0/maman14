@@ -43,7 +43,7 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx, Macro
             return handle_entry_directive_first_pass(line, &word_idx, word, data);
         }
         else {
-            fprintf(stderr, "Error: Unknown instruction or directive '%s' at line %d.\n", word, line_idx);
+            fprintf(stdout, "Error: Unknown instruction or directive '%s' at line %d.\n", word, line_idx);
             data->error_flag = 1;
             return -1; /* Unknown instruction or directive */
         }
@@ -72,7 +72,7 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
         line_idx++;
         
         if (strchr(cur_line, '\n') == NULL && !feof(am_file)) {
-            fprintf(stderr, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
+            fprintf(stdout, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
                     line_idx, MAX_LINE_LEN);
             data->error_flag = 1;
             /* Skip the rest of the line to avoid processing it */
@@ -85,13 +85,12 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
                 return MEMORY_ALLOCATION_ERROR;
             }
             else if (process_value == -1) {
-                fprintf(stderr, "Error processing line %d.\n", line_idx);
+                fprintf(stdout, "Error processing line %d.\n", line_idx);
                 data->error_flag = 1; /* Set error flag */
             }
         }
     }
     
-
     /*adding the ICF to the DC*/
     if (data->error_flag == 0){
         tmp = data->label_head;

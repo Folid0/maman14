@@ -116,25 +116,25 @@ int get_macro_initialization_name_from_line(char *line, char* name){
         
         /*checks if valid mcro name*/
         if (get_next_word(line, &word_idx, word) == 0){
-            fprintf(stderr, "Error: Macro name is missing.\n");
+            fprintf(stdout, "Error: Macro name is missing.\n");
             return -1;
         }
         if (is_reserved_word(word) == 1){
-            fprintf(stderr, "Error: Macro name is reserved.\n");
+            fprintf(stdout, "Error: Macro name is reserved.\n");
             return -1;
         } 
         if (!isalpha(word[0])) {
-            fprintf(stderr, "Error: Macro name must start with a letter.\n");
+            fprintf(stdout, "Error: Macro name must start with a letter.\n");
             return -1; /* Macro name must start with a letter */;
         }
 
         if (strlen(word) >= MAX_MACRO_NAME_LEN) {
-            fprintf(stderr, "Error: Macro name exceeds maximum length of %d characters.\n", MAX_MACRO_NAME_LEN);
+            fprintf(stdout, "Error: Macro name exceeds maximum length of %d characters.\n", MAX_MACRO_NAME_LEN);
             return -1; /* Macro name exceeds maximum length */;
         }
         for (i = 1; word[i] != '\0' && word[i] != '\n'; i++) { /*checks if the name contains only alphanumeric characters*/
             if (!isalnum(word[i]) && word[i] != '_') {
-                fprintf(stderr, "Error: Macro name must contain only alphanumeric characters or underscores.\n");
+                fprintf(stdout, "Error: Macro name must contain only alphanumeric characters or underscores.\n");
                 return -1; /* Macro name must contain only alphanumeric characters or underscores */;
             }
         }
@@ -143,7 +143,7 @@ int get_macro_initialization_name_from_line(char *line, char* name){
         strcpy(name, word);
 
         if (get_next_word(line, &word_idx, word) == 1){ /*the name has a white space or illegal character*/
-            fprintf(stderr, "Error: Macro name must be a single word.\n");
+            fprintf(stdout, "Error: Macro name must be a single word.\n");
             return -1;
         }  
 
@@ -261,7 +261,7 @@ int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,Assembler
     if (is_data_directive(command) && strcmp(command, ".asciz") != 0) {
         size = (strcmp(command, ".db") == 0) ? 1 : ((strcmp(command, ".dh") == 0) ? 2 : (strcmp(command, ".dw") == 0) ? 4 : 0);
         if (size == 0) {
-            fprintf(stderr, "Error: Unknown directive '%s'\n", command);
+            fprintf(stdout, "Error: Unknown directive '%s'\n", command);
             data->error_flag = 1;
             return -1;
         } 
@@ -271,14 +271,14 @@ int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,Assembler
     else if (strcmp(command, ".asciz") == 0) {
         skip_whitespace(line, *word_idx);
         if (line[*word_idx] != '"') {
-            fprintf(stderr, "Error: .asciz string must start with a quote\n");
+            fprintf(stdout, "Error: .asciz string must start with a quote\n");
             data->error_flag = 1;
             return -1;
         }
         (*word_idx)++; /* Skip the starting quote */
         while(line[*word_idx] != '\0' && line[*word_idx] != '\n' && line[*word_idx] != '"') {
             if ((unsigned char)line[*word_idx] < 32 || (unsigned char)line[*word_idx] > 126) { /*check for non ASCII characters*/
-                fprintf(stderr, "Error: .asciz contains a non-printable ASCII character\n");
+                fprintf(stdout, "Error: .asciz contains a non-printable ASCII character\n");
                 data->error_flag = 1;
                 return -1;
             }
@@ -303,4 +303,13 @@ void free_everything(AssemblerData *data, MacroNode *macro_head, ExternUsageNode
     free(ob_file_name);
     free(ext_file_name);
     free(ent_file_name);
+}
+
+
+/*returns 1 if the image has enough space, 0 otherwise*/
+int does_image_have_space(int cur_size, int needed_bytes){
+    if (cur_size < 0 || needed_bytes < 0) {
+        return 0; /* Invalid parameters */
+    }
+    return (cur_size <= MAX_MEM_SIZE - needed_bytes);
 }

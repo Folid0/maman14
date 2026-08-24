@@ -11,5 +11,6 @@ FORWARD: move $7,$8
 FUNC:  addi $0,1,$1
        jmp $0
 DATA1: .dw 123
-.entry START
+.extern START2
+jmp START2
 .entry DATA1
