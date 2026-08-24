@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include "data_table.h"
+#include "macro_table.h"
 
 /*returns the index of the first non-whitespace character from the given index*/
 int skip_whitespace(char *line, int index);
@@ -29,6 +30,9 @@ int get_label_name(char *line, int *word_idx, char *label_name);
 int should_skip_line(char *line);
 int is_entry_directive(char *line, int word_idx);
 int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,AssemblerData *data);
+
+void free_everything(AssemblerData *data, MacroNode *macro_head, ExternUsageNode *extern_head,
+     char *am_file_name, char *base_file_name, char *ob_file_name);
 
 void flush_line(FILE *fp);
 

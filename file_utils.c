@@ -1,6 +1,7 @@
 #include "file_utils.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "consts.h"
 #include "data_table.h"
@@ -102,8 +103,42 @@ int add_file_extension(char *file_name_no_extension, char *extension, char *outp
     return 1;
 }
 
+void write_bytes_to_ob_file(FILE *ob_file, const unsigned char *image, int cur_idx, int total_size) {
+    int byte_idx;
+    for (byte_idx = 0; byte_idx < 4 && cur_idx + byte_idx < total_size; byte_idx++) {
+        fprintf(ob_file, " %02X ", image[cur_idx + byte_idx]);
+    }
+    fprintf(ob_file, "\n");
+}
 
-int write_ob_file(const char *ob_file_name, const AssemblerData *data){
-    /*you stopped here*/
+int write_ob_file(FILE *ob_file, const AssemblerData *data){
+    int code_size = data->IC - 100; /* Assuming IC starts at 100 */
+    int data_size = data->DC;
+
+    int code_idx, byte_idx;
+
+    fprintf(ob_file, "%d %d\n", code_size, data_size);
+
+    if (ob_file == NULL) {
+        fprintf(stderr, "Error: the file is NULL\n");
+        return -1;
+    }
+    
+
+    for (code_idx = 0; code_idx < code_size; code_idx+=4) {
+        fprintf(ob_file, "%04d", 100 + code_idx); /* writing the address */
+
+        write_bytes_to_ob_file(ob_file, data->code_image, code_idx, code_size);
+    }
+
+
+    for (byte_idx = 0; byte_idx < data_size; byte_idx+=4) {
+        fprintf(ob_file, "%04d", 100 + code_size + byte_idx); /* writing the address */
+
+        write_bytes_to_ob_file(ob_file, data->data_image, byte_idx, data_size);
+    }
+    fprintf(ob_file, "\n");
+
+    return 1;
 }
 

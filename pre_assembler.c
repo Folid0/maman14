@@ -9,9 +9,7 @@
 #include "reserved_word.h"
 
 /*returns 0 if error occurred, 1 if successful*/
-int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
-    char file_name_as[MAX_FILE_NAME_LEN];
-    char file_name_am[MAX_FILE_NAME_LEN];
+int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file_name_am) {
     int error_flag = 0; /*1 if there is an error*/
     int is_mcro_val;
     char cur_line[MAX_LINE_LEN];
@@ -22,16 +20,11 @@ int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
 
     MacroNode *mcro_node_head = NULL; /*pointer to head of the macro list*/
 
-
-    /* Create the output file names, with as and am extensions */
-    sprintf(file_name_as, "%s.as", file_name);
-    sprintf(file_name_am, "%s.am", file_name);
-
     input_file_as = fopen(file_name_as, "r");
     /* Open the input file for reading */
     if (input_file_as == NULL) {
         fprintf(stderr, "Error: Could not open input file %s for reading.\n", file_name_as);
-        return 0; /*file opening failed*/
+        return -1; /*file opening failed*/
     }
 
     output_file_am = fopen(file_name_am, "w");
@@ -39,7 +32,7 @@ int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
     if (output_file_am == NULL) {
         fprintf(stderr, "Error: Could not open output file %s for writing.\n", file_name_am);
         fclose(input_file_as);
-        return 0; /*file opening failed*/
+        return -1; /*file opening failed*/
     }
     
     while (fgets(cur_line, sizeof(cur_line), input_file_as) != NULL){
@@ -81,9 +74,6 @@ int run_pre_assembler(char *file_name, MacroNode **macro_head_ret) {
         }
 
     }
-
-    
-
 
 
 

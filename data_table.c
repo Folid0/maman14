@@ -172,3 +172,20 @@ void free_label_table(LabelNode *head){
         tmp = next;
     }
 }
+
+
+/*initialize AssemblerData*/
+/*returns 1 if successful, -1 if failed*/
+int initialize_assembler_data(AssemblerData *data) {
+    if (data == NULL) {
+        fprintf(stderr, "Error: AssemblerData pointer is NULL\n");
+        return -1;
+    }
+    memset(data->code_image, 0, sizeof(data->code_image));
+    memset(data->data_image, 0, sizeof(data->data_image));
+    data->IC = 100; /* IC starts at 100, like the rules say */
+    data->DC = 0;
+    data->label_head = NULL;
+    data->error_flag = 0;
+    return 1;
+}

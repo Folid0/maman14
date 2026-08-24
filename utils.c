@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "reserved_word.h"
 #include "data_table.h"
+#include "macro_table.h"
 
 /*returns the index of the first non-whitespace character from the given index*/
 int skip_whitespace(char *line, int index){
@@ -288,4 +289,14 @@ int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,Assembler
         return 1;
     }
     return 0; /*nothing was incremented*/
+}
+
+void free_everything(AssemblerData *data, MacroNode *macro_head, ExternUsageNode *extern_head,
+     char *am_file_name, char *base_file_name, char *ob_file_name) {
+    free_label_table(data->label_head);
+    free_macro_table(macro_head);
+    free_extern_usage_table(extern_head);
+    free(am_file_name);
+    free(base_file_name);
+    free(ob_file_name);
 }

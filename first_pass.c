@@ -85,7 +85,7 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
             }
         }
     }
-
+    
 
     /*adding the ICF to the DC*/
     if (data->error_flag == 0){

@@ -1,5 +1,5 @@
-#ifndef SYMBOL_TABLE_H
-#define SYMBOL_TABLE_H
+#ifndef DATA_TABLE_H
+#define DATA_TABLE_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,8 +47,9 @@ LabelType get_label_type(const char *word);
 LabelNode* find_label(LabelNode *head, const char *name);
 int is_valid_label_name(const char *name);
 int add_ExternUsage_node(ExternUsageNode **head, char *name, long address);
+int initialize_assembler_data(AssemblerData *data);
 
 void free_extern_usage_table(ExternUsageNode *head);
 void free_label_table(LabelNode *head);
 
-#endif /* SYMBOL_TABLE_H */
+#endif /*DATA_TABLE_H */
