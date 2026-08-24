@@ -17,7 +17,7 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
     FILE *output_file_am;
     int line_idx = 0;
     char mcro_name[MAX_MACRO_NAME_LEN];
-
+    int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
     MacroNode *mcro_node_head = NULL; /*pointer to head of the macro list*/
 
     input_file_as = fopen(file_name_as, "r");
@@ -52,17 +52,27 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
             fprintf(stderr, "mcro Errror at line: %d ", line_idx);
             error_flag = 1;
         }
-        else if(is_mcro_val == 1 && error_flag == 0){ /*its a mcro and there is no error*/
-            if (add_macro(&mcro_node_head, mcro_name) == -1){
+        else if(is_mcro_val == 1){ /*its a mcro*/
+            error_value = add_macro(&mcro_node_head, mcro_name);
+            if (error_value == MEMORY_ALLOCATION_ERROR){
                 fprintf(stderr, "memmory allocation ERROR");
+                error_flag = 1;
+                return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
+            }
+            else if (error_value == -1){ /*there is an error with the mcro*/
+                fprintf(stderr, "mcro Errror at line: %d ", line_idx);
                 error_flag = 1;
             }
             else{ /*no problem with adding macro to the list*/
-                if (error_flag == 0){
-                    if (add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx) == -1){
-                        fprintf(stderr, "Error adding line block to macro at line: %d", line_idx);
-                        error_flag = 1;
-                    }
+                error_value = add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx);
+                if (error_value == MEMORY_ALLOCATION_ERROR){
+                    fprintf(stderr, "memmory allocation ERROR");
+                    error_flag = 1;
+                    return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
+                }
+                else if (add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx) == -1){
+                    fprintf(stderr, "Error adding line block to macro at line: %d", line_idx);
+                    error_flag = 1;
                 }
             }
         }

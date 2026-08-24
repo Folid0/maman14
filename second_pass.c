@@ -55,10 +55,11 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
     }
     if (is_j_type_instruction(word) && strcmp(word, "hlt") != 0) {
         /* Handle J-type instruction */
-        if (handle_j_type_instruction_second_pass(cur_line, &command_start_idx, *cur_IC, data, extern_head) == -1) {
+        int error_value = handle_j_type_instruction_second_pass(cur_line, &command_start_idx, *cur_IC, data, extern_head);
+        if (error_value != 1) {
             *cur_IC += 4;
             data->error_flag = 1;
-            return -1;
+            return error_value; /* Return the specific error value */
         }
     }
     if (is_instruction(word)) {
@@ -74,7 +75,7 @@ int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern
     int line_idx = 0;
     int cur_IC = 100;
     int cur_DC = 0;
-
+    int process_value;
     rewind(am_file); /* Reset file pointer*/
 
     if (extern_head == NULL) {
@@ -85,9 +86,13 @@ int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern
 
     while (fgets(cur_line, sizeof(cur_line), am_file) != NULL) {
         line_idx++;
-        if (process_line_second_pass(cur_line, data, line_idx, &cur_IC, &cur_DC, extern_head) == -1) {
+        process_value = process_line_second_pass(cur_line, data, line_idx, &cur_IC, &cur_DC, extern_head);
+        if (process_value != 1) {
             fprintf(stderr, "Error: Failed to process line %d in second pass.\n", line_idx);
             data->error_flag = 1;
+            if (process_value == MEMORY_ALLOCATION_ERROR) {
+                return MEMORY_ALLOCATION_ERROR; /* Stop processing on MEMORY_ALLOCATION_ERROR */
+            }
         }
     }
 
@@ -263,7 +268,13 @@ int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC,
     }   
 
     if (label_node->type == EXTERN) {
-        if (add_ExternUsage_node(extern_head, label_node->name, cur_IC) == -1) {
+        int error_value = add_ExternUsage_node(extern_head, label_node->name, cur_IC);
+        if (error_value == MEMORY_ALLOCATION_ERROR) {
+            fprintf(stderr, "Error: Memory allocation failed for extern usage node\n");
+            data->error_flag = 1;
+            return -1;
+        }
+        if (error_value == -1) {
             fprintf(stderr, "Error: Failed to add extern usage for label '%s'\n", label_node->name);
             data->error_flag = 1;
             return -1;

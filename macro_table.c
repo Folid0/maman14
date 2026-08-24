@@ -7,12 +7,12 @@
 #include "utils.h"
 
 /* Add a new macro to the list */
-/*returns -1 if an error occurs, 0 if successful*/
+/*returns -1 if an error occurs, 1 if successful, -2 for memory allocation error*/
 int add_macro(MacroNode **head, char *name) {
     MacroNode *new_node = (MacroNode *)malloc(sizeof(MacroNode));
     if (new_node == NULL) {
         fprintf(stderr, "Memory allocation failed for new macro node.\n");
-        return -1; /*memory allocation failed*/
+        return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
     }
     /* Initialize the new macro node */
     strncpy(new_node->name, name, MAX_MACRO_NAME_LEN);
@@ -35,10 +35,11 @@ int add_macro(MacroNode **head, char *name) {
     }
 
 
-    return 0; 
+    return 1; 
 }
 
 /* Add a line to a macro */
+/*returns -1 if an error occurs, 1 if successful, -2 for memory allocation error*/
 int add_line_to_macro(MacroNode *macro, char *line) {
     LineNode *new_node;
     if (macro == NULL) {
@@ -49,7 +50,7 @@ int add_line_to_macro(MacroNode *macro, char *line) {
     new_node = (LineNode *)malloc(sizeof(LineNode));
     if (new_node == NULL) {
         fprintf(stderr, "Memory allocation failed for new line node.\n");
-        return -1; /*memory allocation failed*/
+        return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
     }
     strncpy(new_node->line, line, MAX_LINE_LEN);
     new_node->line[MAX_LINE_LEN - 1] = '\0'; /* Ensure correct termination */
@@ -64,7 +65,7 @@ int add_line_to_macro(MacroNode *macro, char *line) {
         macro->lines_tail = new_node;
     }
 
-    return 0; 
+    return 1; 
 }
 
 /* Find a macro by its name */

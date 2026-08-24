@@ -32,7 +32,7 @@ int is_entry_directive(char *line, int word_idx);
 int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,AssemblerData *data);
 
 void free_everything(AssemblerData *data, MacroNode *macro_head, ExternUsageNode *extern_head,
-     char *am_file_name, char *base_file_name, char *ob_file_name);
+     char *am_file_name, char *base_file_name, char *ob_file_name, char *ext_file_name, char *ent_file_name);
 
 void flush_line(FILE *fp);
 

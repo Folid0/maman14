@@ -6,12 +6,12 @@
 
 #include <ctype.h>
 
-/*returns 1 if label was added successfully, -1 otherwise*/
+/*returns 1 if label was added successfully, -1 otherwise, -2 for memory allocation error*/
 int add_label(LabelNode **head, char *name, int address, LabelType type) {
     LabelNode *new_node = (LabelNode *)malloc(sizeof(LabelNode));
     if (new_node == NULL) {
         fprintf(stderr, "Memory allocation failed for new label node.\n");
-        return -1; /*memory allocation failed*/
+        return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
     }
     /* Initialize the new label node */
     strncpy(new_node->name, name, MAX_SYMBOL_NAME_LEN);
@@ -123,12 +123,12 @@ int is_valid_label_name(const char *name)
 }
 
 /*adds a new extern usage node to the list*/
-/*returns 1 if successful, -1 otherwise*/
+/*returns 1 if successful, -1 otherwise, returns -2 if memory allocation fails*/
 int add_ExternUsage_node(ExternUsageNode **head, char *name, long address) {
     ExternUsageNode *new_node = (ExternUsageNode *)malloc(sizeof(ExternUsageNode));
     if (new_node == NULL) {
         fprintf(stderr, "Memory allocation failed for new extern usage node.\n");
-        return -1; /* Memory allocation failed */
+        return MEMORY_ALLOCATION_ERROR; /* Memory allocation failed */
     }
 
     /* Initialize the new extern usage node */

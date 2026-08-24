@@ -466,7 +466,8 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
     char trash[MAX_LINE_LEN];
     LabelNode *tmp;
     int skip = 0;
-
+    int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
+    
     if(get_next_word(line, word_idx, name) == 0 && strcmp(name, ".extern") != 0) { /*getting the idx of the first word, which is the command name*/
         fprintf(stderr, "Error: Missing command for .extern directive\n");
         data->error_flag = 1;
@@ -507,7 +508,13 @@ int encode_extern_directive(char *line, int *word_idx, char *name, AssemblerData
     
     if (skip == 0) {
         /* Add the label to the symbol table with EXTERN type */
-        if (add_label(&data->label_head, label_name, 0, EXTERN) == -1) {
+        error_value = add_label(&data->label_head, label_name, 0, EXTERN);
+        if (error_value == MEMORY_ALLOCATION_ERROR) {
+            fprintf(stderr, "Memory allocation error while adding label '%s' to symbol table\n",label_name);
+            data->error_flag = 1;
+            return MEMORY_ALLOCATION_ERROR;
+        }
+        if (error_value == -1) {
             fprintf(stderr, "Error: Failed to add label '%s' to symbol table\n", label_name);
             data->error_flag = 1;
             return -1;
@@ -575,6 +582,7 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
     int command_idx = 0;
     LabelType type;
     char command_name[MAX_LINE_LEN];
+    int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
     label_name[0] = '\0'; /* Initialize label_name to an empty string */
 
     /* setting label name */
@@ -597,39 +605,57 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
         return -1;
     }
 
-    switch (type) {
-        case CODE:
-            if (add_label(&data->label_head, label_name, data->IC, CODE) == -1 || handle_CODE(line, &command_idx, data) == -1){
-                fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
-                return -1;
-            }
-            break;
-        case DATA:
-            if (add_label(&data->label_head, label_name, data->DC, DATA) == -1 || handle_data_directive(line, &command_idx, data) == -1){
-                fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
-                return -1;
-            }
-            break;
-        case EXTERN:
-            /*igonore the label as there is no meaning*/
-            if (encode_extern_directive(line, &command_idx, command_name, data) == -1) {
-                fprintf(stderr, "Error: Failed to handle extern directive for label '%s' at line %d.\n", label_name, line_idx);
-                return -1;
-            }
-            break;
-        case ENTRY:
-            /*ignore the label as there is no meaning*/
-            if (handle_entry_directive_first_pass(line, &command_idx, command_name, data) == -1) {
-                fprintf(stderr, "Error: Failed to handle entry directive for label '%s' at line %d.\n", label_name, line_idx);
-                return -1;
-            }
-            break;
-        default:
-            fprintf(stderr, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
-            return -1; /* Unknown label type */
-    }
+switch (type) {
+    case CODE:
+        error_value = add_label(&data->label_head, label_name, data->IC, CODE);
+        if (error_value != 1) {
+            fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
+            return error_value;
+        }
 
-    return 1; /* Successfully handled the label */
+        error_value = handle_CODE(line, &command_idx, data);
+        if (error_value != 1) {
+            fprintf(stderr, "Error: Failed to handle code directive for label '%s' at line %d.\n", label_name, line_idx);
+            return error_value;
+        }
+        break;
+
+    case DATA:
+        error_value = add_label(&data->label_head, label_name, data->DC, DATA);
+        if (error_value != 1) {
+            fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
+            return error_value;
+        }
+
+        error_value = handle_data_directive(line, &command_idx, data);
+        if (error_value != 1) {
+            fprintf(stderr, "Error: Failed to handle data directive for label '%s' at line %d.\n", label_name, line_idx);
+            return error_value;
+        }
+        break;
+
+    case EXTERN:
+        /*igonore the label as there is no meaning*/
+        error_value = encode_extern_directive(line, &command_idx, command_name, data);
+        if (error_value != 1) {
+            fprintf(stderr, "Error: Failed to handle extern directive for label '%s' at line %d.\n", label_name, line_idx);
+            return error_value;
+        }
+        break;
+
+    case ENTRY:
+        /*ignore the label as there is no meaning*/
+        error_value = handle_entry_directive_first_pass(line, &command_idx, command_name, data);
+        if (error_value != 1) {
+            fprintf(stderr, "Error: Failed to handle entry directive for label '%s' at line %d.\n", label_name, line_idx);
+            return error_value;
+        }
+        break;
+
+    default:
+        fprintf(stderr, "Error: Unknown label type for '%s' at line %d.\n", label_name, line_idx);
+        return -1; /* Unknown label type */
+}
 }
 
 

@@ -292,11 +292,15 @@ int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,Assembler
 }
 
 void free_everything(AssemblerData *data, MacroNode *macro_head, ExternUsageNode *extern_head,
-     char *am_file_name, char *base_file_name, char *ob_file_name) {
-    free_label_table(data->label_head);
+     char *am_file_name, char *base_file_name, char *ob_file_name, char *ext_file_name, char *ent_file_name) {
+    if (data != NULL) {
+        free_label_table(data->label_head);
+    }
     free_macro_table(macro_head);
     free_extern_usage_table(extern_head);
     free(am_file_name);
     free(base_file_name);
     free(ob_file_name);
+    free(ext_file_name);
+    free(ent_file_name);
 }

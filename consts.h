@@ -5,5 +5,5 @@
 #define MAX_MACRO_NAME_LEN 32
 #define MAX_SYMBOL_NAME_LEN 32
 #define MAX_MEM_SIZE 4096 /*assuming a maximum memory size of 4096 bytes*/
-
+#define MEMORY_ALLOCATION_ERROR -2
 #endif /* CONSTS_H */
