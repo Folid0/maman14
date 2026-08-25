@@ -159,11 +159,17 @@ int run_file(char *file_path, int max_file_path_len) {
         return -1;
     }
 
-    close_files(am_file, ob_file, ext_file, ent_file, am_file_name, ob_file_name, ext_file_name, ent_file_name);
+    if (close_files(am_file, ob_file, ext_file, ent_file, am_file_name, ob_file_name, ext_file_name, ent_file_name) != 1) {
+        fprintf(stdout, "Error: Failed to close files.\n");
+        remove_files(am_file, ob_file, ext_file, ent_file, am_file_name, ob_file_name, ext_file_name, ent_file_name); /* Remove the files that were allready created */
+        free_everything(&data, macro_head, extern_head, am_file_name, base_file_name, ob_file_name, ext_file_name, ent_file_name);
+        return -1;
+    }
     free_everything(&data, macro_head, extern_head, am_file_name, base_file_name, ob_file_name, ext_file_name, ent_file_name);
     return 1; /* Success */
 }
 
+/*the main function*/
 /*returns 1 for success, -2 for MEMORY ALLOCATION ERROR*/
 int main(int argc, char *argv[]) {
     int result;

@@ -70,7 +70,8 @@ int process_line_second_pass(char *cur_line, AssemblerData *data, int line_idx, 
     return 1;
 }
 
-
+/*runs the second pass on the am file*/
+/*returns 1 if successful, -1 if error, MEMORY_ALLOCATION_ERROR if memory allocation error*/
 int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern_head) {
     char cur_line[MAX_LINE_LEN];
     int line_idx = 0;
@@ -100,6 +101,8 @@ int run_second_pass(FILE *am_file, AssemblerData *data, ExternUsageNode **extern
     return data->error_flag ? -1 : 1; /* Return -1 if there were errors, otherwise return 1 */
 }
 
+/*handles the .entry directive in the second pass*/
+/*returns 1 if successful, -1 if error*/
 int handle_entry_directive_second_pass(char *line, int word_idx, AssemblerData *data) {
     char label_name[MAX_SYMBOL_NAME_LEN];
     LabelNode *label_node;
@@ -198,6 +201,8 @@ int get_branch_value(char *line, AssemblerData *data, int cur_IC, char *label_na
     return 1;
 }
 
+/*handles branch instructions in the second pass*/
+/*returns 1 if successful, -1 if error*/
 int handle_branch_instruction_second_pass(char *line, int *word_idx, AssemblerData *data, int cur_IC) {
     char operand1[MAX_LINE_LEN], operand2[MAX_LINE_LEN], label_name[MAX_LINE_LEN];
     int offset;
@@ -247,6 +252,9 @@ int get_j_type_value(char *line,  char *label_name, int *word_idx, int *op_code,
     
     return 1; /* Successfully retrieved the label for J-type instruction */
 }
+
+/*handles J-type instructions in the second pass*/
+/*returns 1 if successful, -1 if error, MEMORY_ALLOCATION_ERROR if memory allocation error*/
 int handle_j_type_instruction_second_pass(char *line, int *word_idx, int cur_IC, AssemblerData *data, ExternUsageNode **extern_head) {
     char operand[MAX_LINE_LEN];
     char name[MAX_LINE_LEN];

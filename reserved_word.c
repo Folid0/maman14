@@ -174,6 +174,7 @@ int is_j_type_instruction(const char *word) {
 }
 
 
+/*returns 1 if the word is a branch instruction, 0 otherwise*/
 int is_branch_instruction(const char *word) {
     const char * const branch_instructions[] = {
         "bne", "beq", "blt", "bgt"

@@ -135,10 +135,11 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
             else{
                 error_value = add_line_to_macro(node, cur_line);
                 if (error_value == MEMORY_ALLOCATION_ERROR){ /*checks memory allocation error*/
-                    fprintf(stdout, "memmory allocation ERROR");
+                    fprintf(stdout, "memmory allocation ERROR at line: %d \n", *line_idx);
                     return MEMORY_ALLOCATION_ERROR;
                 }
                 else if (error_value == -1){
+                    fprintf(stdout, "Error adding line to macro at line: %d \n", *line_idx);
                     return -1;
                 }
             }
@@ -151,14 +152,19 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
 /* Replace a macro with its lines in the output file */
 /*returns 0 if successful, -1 if an error occurs*/
 int replace_macro(MacroNode *macro, FILE *output_file_am) {
-    LineNode *cur_line_node = macro->lines_head;
+    LineNode *cur_line_node;
     if (macro == NULL) {
         fprintf(stdout, "Macro node is NULL.\n");
         return -1; /*macro node is NULL*/
     }
+    cur_line_node = macro->lines_head;
+
 
     while (cur_line_node != NULL) {
-        fputs(cur_line_node->line, output_file_am);
+        if (fputs(cur_line_node->line, output_file_am) == EOF) {
+            fprintf(stdout, "Error writing to output file.\n");
+            return -1;
+        }
         cur_line_node = cur_line_node->next;
     }
 
@@ -185,11 +191,17 @@ int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head) {
                 return -1;
             }
         } else { /*if the word is not a macro name*/
-            fputs(cur_line, output_file_am);
+            if (fputs(cur_line, output_file_am) == EOF) {
+                fprintf(stdout, "Error writing to output file.\n");
+                return -1;
+            }
         }
     }
     else{
-        fputs(cur_line, output_file_am); /*put empty line*/
+        if (fputs(cur_line, output_file_am) == EOF) { /*put empty line*/
+            fprintf(stdout, "Error writing to output file.\n");
+            return -1;
+        }
     }
 
     return 0; 

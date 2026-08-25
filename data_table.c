@@ -33,6 +33,7 @@ int add_label(LabelNode **head, char *name, int address, LabelType type) {
     return 1; 
 }
 
+/*gets a label, returns the label type*/
 LabelType get_label_type(const char *word) {
     if (is_data_directive(word)) {
         return DATA;
@@ -55,11 +56,11 @@ int is_label(const char *word) {
     if (len == 0 || len > MAX_SYMBOL_NAME_LEN) {
         return 0; /* Not a label */
     }
-    if (!isalpha(word[0])) {
+    if (!isalpha((unsigned char)word[0])) {
         return 0; /* Must start with a letter */
     }
     for (i = 1; i < len-1; i++) {
-        if (!isalnum(word[i])) {
+        if (!isalnum((unsigned char)word[i])) {
             return 0; /* Must be alphanumeric*/
         }
     }

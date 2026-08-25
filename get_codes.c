@@ -8,6 +8,8 @@
 #include "reserved_word.h"
 #include "writing_to_binary.h"
 
+/*gets a register and returns its number*/
+/*returns the register number if successful, -1 if error*/
 int get_register_num(const char *name) {
     int reg_num;
     if (name == NULL || is_register(name) == 0) {

@@ -35,6 +35,8 @@ size_t find_max_file_path_length(char *file_paths[], int num_files) {
     return max;
 }
 
+/*gets file path with an as extension, puts the base file path without the extension into output_name*/
+/*returns 1 if successful, -1 if error*/
 int extract_file_name_without_extension(const char *file_path, char *output_name, int max_file_name_len) {
     size_t file_path_len;
     size_t output_name_len;
@@ -73,6 +75,8 @@ int extract_file_name_without_extension(const char *file_path, char *output_name
     return 1;
 }
 
+/*adds extension to a file name, puts it in output_path*/
+/*returns 1 if successful, -1 if error*/
 int add_file_extension(char *file_name_no_extension, char *extension, char *output_path, int max_file_path_len){
     size_t file_name_len;
     size_t extension_len;
@@ -103,14 +107,26 @@ int add_file_extension(char *file_name_no_extension, char *extension, char *outp
     return 1;
 }
 
-void write_bytes_to_ob_file(FILE *ob_file, const unsigned char *image, int cur_idx, int total_size) {
+/*writes bytes to the .ob file*/
+/*returns 1 if successful, -1 if error*/
+int write_bytes_to_ob_file(FILE *ob_file, const unsigned char *image, int cur_idx, int total_size) {
     int byte_idx;
     for (byte_idx = 0; byte_idx < 4 && cur_idx + byte_idx < total_size; byte_idx++) {
-        fprintf(ob_file, " %02X", (unsigned int)image[cur_idx + byte_idx]);
+        if (fprintf(ob_file, " %02X", (unsigned int)image[cur_idx + byte_idx]) < 0) {
+            fprintf(stdout, "Error writing to .ob file.\n");
+            return -1;
+        }
     }
-    fprintf(ob_file, "\n");
+    if (fprintf(ob_file, "\n") < 0) {
+        fprintf(stdout, "Error writing to .ob file.\n");
+        return -1;
+    }
+    return 1;
 }
 
+
+/*writes the .ob file*/
+/*returns 1 if successful, -1 if error*/
 int write_ob_file(FILE *ob_file, const AssemblerData *data){
     int code_size;
     int data_size;
@@ -122,19 +138,32 @@ int write_ob_file(FILE *ob_file, const AssemblerData *data){
     code_size = data->IC - 100; /* Assuming IC starts at 100 */
     data_size = data->DC;
 
-    fprintf(ob_file, "     %d %d\n", code_size, data_size);
-    
-    for (code_idx = 0; code_idx < code_size; code_idx+=4) {
-        fprintf(ob_file, "%04d", 100 + code_idx); /* writing the address */
+    if (fprintf(ob_file, "     %d %d\n", code_size, data_size) < 0) {
+        fprintf(stdout, "Error writing to .ob file.\n");
+        return -1;
+    }
 
-        write_bytes_to_ob_file(ob_file, data->code_image, code_idx, code_size);
+    for (code_idx = 0; code_idx < code_size; code_idx+=4) {
+        if (fprintf(ob_file, "%04d", 100 + code_idx) < 0) { /* writing the address */
+            fprintf(stdout, "Error writing to .ob file.\n");
+            return -1;
+        }
+
+        if (write_bytes_to_ob_file(ob_file, data->code_image, code_idx, code_size) == -1) {
+            return -1;
+        }
     }
 
 
     for (byte_idx = 0; byte_idx < data_size; byte_idx+=4) {
-        fprintf(ob_file, "%04d", 100 + code_size + byte_idx); /* writing the address */
+        if (fprintf(ob_file, "%04d", 100 + code_size + byte_idx) < 0) { /* writing the address */
+            fprintf(stdout, "Error writing to .ob file.\n");
+            return -1;
+        }
 
-        write_bytes_to_ob_file(ob_file, data->data_image, byte_idx, data_size);
+        if (write_bytes_to_ob_file(ob_file, data->data_image, byte_idx, data_size) == -1) {
+            return -1;
+        }
     }
 
     return 1;
@@ -238,6 +267,8 @@ int remove_files(FILE *am_file, FILE *ob_file, FILE *ext_file, FILE *ent_file,
 }
 
 
+/*writes the .ext file*/
+/*returns 1 if successful, -1 if error*/
 int write_ext_file(FILE **ext_file, char *ext_file_name, ExternUsageNode *extern_head) {
     ExternUsageNode *current = extern_head;
     
@@ -274,6 +305,9 @@ int write_ext_file(FILE **ext_file, char *ext_file_name, ExternUsageNode *extern
     return 1; /* success */
 }
 
+
+/*writes the .ent file*/
+/*returns 1 if successful, -1 if error*/
 int write_ent_file(FILE **ent_file, char *ent_file_name, LabelNode *label_head) {
     LabelNode *current = label_head;
     int entry_exist = 0;
@@ -318,7 +352,8 @@ int write_ent_file(FILE **ent_file, char *ent_file_name, LabelNode *label_head) 
     return 1; /* success */
 }
 
-
+/*removes the file from the system*/
+/*returns 1 if successful, -1 if error*/
 int remove_file(FILE **file, char *file_name) {
     if (file == NULL || *file == NULL || file_name == NULL) {
         fprintf(stdout, "Error: file is NULL or file_name is NULL\n");

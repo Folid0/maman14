@@ -123,7 +123,7 @@ int get_macro_initialization_name_from_line(char *line, char* name){
             fprintf(stdout, "Error: Macro name is reserved.\n");
             return -1;
         } 
-        if (!isalpha(word[0])) {
+        if (!isalpha((unsigned char)word[0])) {
             fprintf(stdout, "Error: Macro name must start with a letter.\n");
             return -1; /* Macro name must start with a letter */;
         }
@@ -133,7 +133,7 @@ int get_macro_initialization_name_from_line(char *line, char* name){
             return -1; /* Macro name exceeds maximum length */;
         }
         for (i = 1; word[i] != '\0' && word[i] != '\n'; i++) { /*checks if the name contains only alphanumeric characters*/
-            if (!isalnum(word[i]) && word[i] != '_') {
+            if (!isalnum((unsigned char)word[i]) && word[i] != '_') {
                 fprintf(stdout, "Error: Macro name must contain only alphanumeric characters or underscores.\n");
                 return -1; /* Macro name must contain only alphanumeric characters or underscores */;
             }
@@ -154,27 +154,6 @@ int get_macro_initialization_name_from_line(char *line, char* name){
     else{
         return 0;
     }
-}
-
-
-/*change comma to whitespace, dosent remove 2 commas in a row (will only replace one)*/
-/*returns 1 if successful, -1 if error*/
-int change_single_comma_to_whitespace(char *line){
-    int len = strlen(line);
-
-    char last = '\0';
-
-    int i;
-    for (i = 0; i < len; i++) {
-        if (line[i] == ',' && last != ',') {
-            return -1; /*there is a double comma*/
-        } else {
-            last = line[i];
-        } 
-    }
-    
-    
-    return 1; /* No comma to remove */
 }
 
 /*returns 1 if its only digits, 0 otherwise */
@@ -254,43 +233,7 @@ int is_entry_directive(char *line, int word_idx) {
     return 0; /* Not an .entry directive */
 }
 
-
-/*returns 1 if incremented, 0 if not incremented, -1 if error*/
-int increment_DC(char* line, int *word_idx, char *command, int *cur_DC,AssemblerData *data) {
-    int size;
-    if (is_data_directive(command) && strcmp(command, ".asciz") != 0) {
-        size = (strcmp(command, ".db") == 0) ? 1 : ((strcmp(command, ".dh") == 0) ? 2 : (strcmp(command, ".dw") == 0) ? 4 : 0);
-        if (size == 0) {
-            fprintf(stdout, "Error: Unknown directive '%s'\n", command);
-            data->error_flag = 1;
-            return -1;
-        } 
-        *cur_DC += size; /* Increment DC by the size of the directive */
-        return 1;        
-    }
-    else if (strcmp(command, ".asciz") == 0) {
-        skip_whitespace(line, *word_idx);
-        if (line[*word_idx] != '"') {
-            fprintf(stdout, "Error: .asciz string must start with a quote\n");
-            data->error_flag = 1;
-            return -1;
-        }
-        (*word_idx)++; /* Skip the starting quote */
-        while(line[*word_idx] != '\0' && line[*word_idx] != '\n' && line[*word_idx] != '"') {
-            if ((unsigned char)line[*word_idx] < 32 || (unsigned char)line[*word_idx] > 126) { /*check for non ASCII characters*/
-                fprintf(stdout, "Error: .asciz contains a non-printable ASCII character\n");
-                data->error_flag = 1;
-                return -1;
-            }
-            (*cur_DC)++; /* Increment DC for each character */
-            (*word_idx)++;
-        }
-
-        return 1;
-    }
-    return 0; /*nothing was incremented*/
-}
-
+/*frees all allocated memory*/
 void free_everything(AssemblerData *data, MacroNode *macro_head, ExternUsageNode *extern_head,
      char *am_file_name, char *base_file_name, char *ob_file_name, char *ext_file_name, char *ent_file_name) {
     if (data != NULL) {

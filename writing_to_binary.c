@@ -48,12 +48,14 @@ int encode_r_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
 
     if (op_code == -1) {
         /*invalid instruction*/
+        fprintf(stdout, "Error: invalid r type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
 
     if (get_next_command(line, word_idx, word) == 0){
         /*invalid or empty register*/
+        fprintf(stdout, "Error: Missing or wrong first register for r type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -61,6 +63,7 @@ int encode_r_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
 
     if (get_next_command(line, word_idx, word) == 0){
         /*invalid or empty register*/
+        fprintf(stdout, "Error: Missing or wrong second register for r type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -69,6 +72,7 @@ int encode_r_type_instruction(char *line, int *word_idx, char *name, AssemblerDa
         rt = get_register_num(word);
         if (get_next_command(line, word_idx, word) == 0){
         /*invalid or empty register*/
+        fprintf(stdout, "Error: Missing or wrong third register for r type instruction '%s'\n", name);
         data->error_flag = 1;
         return -1;
     }
@@ -408,9 +412,13 @@ int encode_asciz_directive(char *line, int *word_idx,char *name, AssemblerData *
     return 1;
 }
 
+
+/*encodes .db, .dh, and .dw directives to binary intot the data image */
+/*returns 1 if successful, -1 if error*/
 int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerData *data) {
     int size = 0; /* Size in bytes for .db, .dh, .dw */
     long val;
+    unsigned long encoded_val; /*for bit shifting*/
     char *endptr;
     int state = 0; /* State: 0 expects a number, 1 expects a comma */
     int i;
@@ -430,7 +438,7 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
         min_value = -32768L;
         max_value = 32767L;
     } else { /* size == 4 */
-        min_value = -2147483648L;
+        min_value = -2147483647L - 1L; /* To avoid overflow */
         max_value = 2147483647L;
     }
 
@@ -465,9 +473,12 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
                     data->error_flag = 1;
                     return -1;
                 }
+
+                encoded_val = (unsigned long)val;
+
                 /* Write to data_image*/
                 for (i = 0; i < size; i++) {
-                    data->data_image[data->DC++] = (val >> (i * 8)) & 0xFF;
+                    data->data_image[data->DC++] = (unsigned char)((encoded_val >> (i * 8)) & 0xFFUL);
                 }
                 
                 *word_idx = endptr - line;
@@ -695,6 +706,8 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
 }
 
 
+/*encodes a branch instruction in the second pass to the code image*/
+/*returns 1 if successful, -1 if error*/
 int encode_branch_instruction_second_pass(int offset, AssemblerData *data, int cur_IC) {
     int code_idx = cur_IC - 100;
     unsigned long machine_code;
@@ -721,7 +734,8 @@ int encode_branch_instruction_second_pass(int offset, AssemblerData *data, int c
     return 1;
 }
 
-
+/*encodes a J-type instruction in the second pass to the code image*/
+/*returns 1 if successful, -1 if error*/
 int encode_j_type_instruction_second_pass(char *line, LabelNode *label_node, AssemblerData *data, int *cur_IC) {
     unsigned long machine_code = 0;
     int code_idx = *cur_IC - 100;
