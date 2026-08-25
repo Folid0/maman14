@@ -9,7 +9,7 @@
 #include "reserved_word.h"
 
 /*returns -1 if error occurred, 1 if successful*/
-int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file_name_am) {
+int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file_name_am, ErrorInfo *error_info) {
     int error_flag = 0; /*1 if there is an error*/
     int is_mcro_val;
     char cur_line[MAX_LINE_LEN];
@@ -26,40 +26,41 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
     input_file_as = fopen(file_name_as, "r");
     /* Open the input file for reading */
     if (input_file_as == NULL) {
-        fprintf(stdout, "Error: Could not open input file %s for reading.\n", file_name_as);
+        report_errorf(error_info, "Could not open input file %s for reading.", file_name_as);
         return -1; /*file opening failed*/
     }
 
     output_file_am = fopen(file_name_am, "w");
     /* Open the output file for writing */
     if (output_file_am == NULL) {
-        fprintf(stdout, "Error: Could not open output file %s for writing.\n", file_name_am);
+        report_errorf(error_info, "Could not open output file %s for writing.", file_name_am);
         fclose(input_file_as);
         return -1; /*file opening failed*/
     }
     
     while (fgets(cur_line, sizeof(cur_line), input_file_as) != NULL){
         line_idx++;
+        set_error_line(error_info, line_idx);
         
         if (strchr(cur_line, '\n') == NULL && !feof(input_file_as)) {
-            fprintf(stdout, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
-                    line_idx, MAX_LINE_LEN - 2); /* -2 to account for newline and null terminator */
+            report_errorf(error_info, "Line exceeds maximum allowed length (%d characters).",
+                    MAX_LINE_LEN - 2); /* -2 to account for newline and null terminator */
             error_flag = 1;
             /* Skip the rest of the line to avoid processing it */
             flush_line(input_file_as);
         }
         else{
             /* Process the current line */
-            is_mcro_val = get_macro_initialization_name_from_line(cur_line, mcro_name);
+            is_mcro_val = get_macro_initialization_name_from_line(cur_line, mcro_name, error_info);
             if (is_mcro_val == -1){
                 /*there is an error with the mcro*/
-                fprintf(stdout, "mcro Errror at line: %d \n", line_idx);
+                report_error(error_info, "Macro error.");
                 error_flag = 1;
             }
             else if(is_mcro_val == 1){ /*its a mcro*/
-                error_value = add_macro(&mcro_node_head, mcro_name);
+                error_value = add_macro(&mcro_node_head, mcro_name, error_info);
                 if (error_value == MEMORY_ALLOCATION_ERROR){
-                    fprintf(stdout, "memmory allocation ERROR at line: %d \n", line_idx);
+                    report_error(error_info, "Memory allocation error while adding macro.");
                     error_flag = 1;
                     fclose(input_file_as); /*closing files*/
                     fclose(output_file_am);
@@ -68,13 +69,13 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
                     return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
                 }
                 else if (error_value == -1){ /*there is an error with the mcro*/
-                    fprintf(stdout, "mcro Errror at line: %d ", line_idx);
+                    report_error(error_info, "Macro error.");
                     error_flag = 1;
                 }
                 else{ /*no problem with adding macro to the list*/
-                    error_value = add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx);
+                    error_value = add_lineblock_to_macro(mcro_node_head, cur_line, input_file_as, &line_idx, error_info);
                     if (error_value == MEMORY_ALLOCATION_ERROR){
-                        fprintf(stdout, "memmory allocation ERROR at line: %d \n", line_idx);
+                        report_error(error_info, "Memory allocation error while reading macro.");
                         error_flag = 1;
                         fclose(input_file_as); /*closing files*/
                         fclose(output_file_am);
@@ -83,14 +84,14 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
                         return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
                     }
                     else if (error_value == -1){
-                        fprintf(stdout, "Error adding line block to macro at line: %d \n", line_idx);
+                        report_error(error_info, "Error adding line block to macro.");
                         error_flag = 1;
                     }
                 }
             }
             else if (is_mcro_val == 0){ /*its not a mcro and there is no error*/
-                if (put_line(output_file_am, cur_line, mcro_node_head) == -1){
-                    fprintf(stdout, "Error putting line to output file at line: %d \n", line_idx);
+                if (put_line(output_file_am, cur_line, mcro_node_head, error_info) == -1){
+                    report_error(error_info, "Error putting line to output file.");
                     error_flag = 1;
                 }
             }
@@ -110,19 +111,21 @@ int run_pre_assembler(MacroNode **macro_head_ret, char *file_name_as, char *file
         return -1; /*error*/
     }
     
+    set_error_line(error_info, 0);
+
     /*closing files*/
     input_file_close_status = fclose(input_file_as);
     output_file_close_status = fclose(output_file_am);
 
     /*checking file close errors*/
     if (input_file_close_status != 0) {
-        fprintf(stdout, "Error: Failed to close input file %s.\n", file_name_as);
+        report_errorf(error_info, "Failed to close input file %s.", file_name_as);
         free_macro_table(mcro_node_head);
         remove(file_name_am); /*remove the output file*/
         return -1; /*error*/
     }
     if (output_file_close_status != 0) {
-        fprintf(stdout, "Error: Failed to close output file %s.\n", file_name_am);
+        report_errorf(error_info, "Failed to close output file %s.", file_name_am);
         free_macro_table(mcro_node_head);
         remove(file_name_am); /*remove the output file*/
         return -1; /*error*/

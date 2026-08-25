@@ -8,10 +8,10 @@
 
 /* Add a new macro to the list */
 /*returns -1 if an error occurs, 1 if successful, -2 for memory allocation error*/
-int add_macro(MacroNode **head, char *name) {
+int add_macro(MacroNode **head, char *name, ErrorInfo *error_info) {
     MacroNode *new_node = (MacroNode *)malloc(sizeof(MacroNode));
     if (new_node == NULL) {
-        fprintf(stdout, "Memory allocation failed for new macro node.\n");
+        report_error(error_info, "Memory allocation failed for new macro node.");
         return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
     }
     /* Initialize the new macro node */
@@ -22,7 +22,7 @@ int add_macro(MacroNode **head, char *name) {
     new_node->next = NULL;
     
     if (find_macro(*head, name) != NULL) {
-        fprintf(stdout, "Error: Macro '%s' is already defined.\n", name);
+        report_errorf(error_info, "Macro '%s' is already defined.", name);
         free(new_node);
         return -1; /* Macro already exists */
     }
@@ -40,16 +40,16 @@ int add_macro(MacroNode **head, char *name) {
 
 /* Add a line to a macro */
 /*returns -1 if an error occurs, 1 if successful, -2 for memory allocation error*/
-int add_line_to_macro(MacroNode *macro, char *line) {
+int add_line_to_macro(MacroNode *macro, char *line, ErrorInfo *error_info) {
     LineNode *new_node;
     if (macro == NULL) {
-        fprintf(stdout, "Macro node is NULL.\n");
+        report_error(error_info, "Macro node is NULL.");
         return -1; /*macro node is NULL*/
     }
 
     new_node = (LineNode *)malloc(sizeof(LineNode));
     if (new_node == NULL) {
-        fprintf(stdout, "Memory allocation failed for new line node.\n");
+        report_error(error_info, "Memory allocation failed for new line node.");
         return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
     }
     strncpy(new_node->line, line, MAX_LINE_LEN);
@@ -103,7 +103,7 @@ void free_macro_table(MacroNode *head){
 
 /*add all the macro lines to the macro*/
 /*returns -1 if an error occurs, probably memory allocation error*/
-int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,int *line_idx){
+int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,int *line_idx, ErrorInfo *error_info){
     char word[MAX_LINE_LEN];
     int word_idx = 0;
     int error_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
@@ -112,9 +112,10 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
     int flag = 0; /*0 for loop to run and 1 to break*/
     while (flag == 0 && fgets(cur_line, MAX_LINE_LEN, input_file_as)!= NULL){
         (*line_idx)++;
+        set_error_line(error_info, *line_idx);
         
         if (strchr(cur_line, '\n') == NULL && !feof(input_file_as)) {
-            fprintf(stdout, "Error: Line %d exceeds maximum allowed length (%d characters).\n", *line_idx, MAX_LINE_LEN - 2);
+            report_errorf(error_info, "Line exceeds maximum allowed length (%d characters).", MAX_LINE_LEN - 2);
             flush_line(input_file_as);
             error_flag = 1;
         }
@@ -126,20 +127,20 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
 
             if (strcmp(word, "mcroend") == 0){ /*macro ended*/
                 if (get_next_word(cur_line, &word_idx, word) == 1){ /*there is a word after mcroend*/
-                    fprintf(stdout, "Error: Unexpected text after 'mcroend' at line %d.\n", *line_idx);
+                    report_error(error_info, "Unexpected text after 'mcroend'.");
                     return -1;
                 }
                 flag = 1;
             }
             
             else{
-                error_value = add_line_to_macro(node, cur_line);
+                error_value = add_line_to_macro(node, cur_line, error_info);
                 if (error_value == MEMORY_ALLOCATION_ERROR){ /*checks memory allocation error*/
-                    fprintf(stdout, "memmory allocation ERROR at line: %d \n", *line_idx);
+                    report_error(error_info, "Memory allocation error while adding line to macro.");
                     return MEMORY_ALLOCATION_ERROR;
                 }
                 else if (error_value == -1){
-                    fprintf(stdout, "Error adding line to macro at line: %d \n", *line_idx);
+                    report_error(error_info, "Error adding line to macro.");
                     return -1;
                 }
             }
@@ -151,10 +152,10 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
 
 /* Replace a macro with its lines in the output file */
 /*returns 0 if successful, -1 if an error occurs*/
-int replace_macro(MacroNode *macro, FILE *output_file_am) {
+int replace_macro(MacroNode *macro, FILE *output_file_am, ErrorInfo *error_info) {
     LineNode *cur_line_node;
     if (macro == NULL) {
-        fprintf(stdout, "Macro node is NULL.\n");
+        report_error(error_info, "Macro node is NULL.");
         return -1; /*macro node is NULL*/
     }
     cur_line_node = macro->lines_head;
@@ -162,7 +163,7 @@ int replace_macro(MacroNode *macro, FILE *output_file_am) {
 
     while (cur_line_node != NULL) {
         if (fputs(cur_line_node->line, output_file_am) == EOF) {
-            fprintf(stdout, "Error writing to output file.\n");
+            report_error(error_info, "Error writing to output file.");
             return -1;
         }
         cur_line_node = cur_line_node->next;
@@ -173,7 +174,7 @@ int replace_macro(MacroNode *macro, FILE *output_file_am) {
 
 /*puts the line to the output file am and if there is a macro it replaces it*/
 /*returns 0 if successful, -1 if an error occurs*/
-int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head) {
+int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head, ErrorInfo *error_info) {
     char cur_word[MAX_LINE_LEN];
     int word_idx = 0;
 
@@ -183,23 +184,23 @@ int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head) {
         MacroNode *found_macro = find_macro(mcro_node_head, cur_word);
         if (found_macro != NULL) { /*if the word is a macro name*/
             if (get_next_word(cur_line, &word_idx, cur_word) == 1) { /*there is a word after the macro name*/
-                fprintf(stdout, "Error: Unexpected text after macro name '%s'.\n", found_macro->name);
+                report_errorf(error_info, "Unexpected text after macro name '%s'.", found_macro->name);
                 return -1;
             }
-            if (replace_macro(found_macro, output_file_am) == -1) {
-                fprintf(stdout, "Error replacing macro.\n");
+            if (replace_macro(found_macro, output_file_am, error_info) == -1) {
+                report_error(error_info, "Error replacing macro.");
                 return -1;
             }
         } else { /*if the word is not a macro name*/
             if (fputs(cur_line, output_file_am) == EOF) {
-                fprintf(stdout, "Error writing to output file.\n");
+                report_error(error_info, "Error writing to output file.");
                 return -1;
             }
         }
     }
     else{
         if (fputs(cur_line, output_file_am) == EOF) { /*put empty line*/
-            fprintf(stdout, "Error writing to output file.\n");
+            report_error(error_info, "Error writing to output file.");
             return -1;
         }
     }

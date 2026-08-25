@@ -14,7 +14,7 @@
 
 
 /*returns 1 if there was a line to process, 0 if skipped, -1 if error*/
-int process_line_first_pass(char *line, AssemblerData *data, int line_idx, MacroNode *macro_head) {
+int process_line_first_pass(char *line, AssemblerData *data, int line_idx, MacroNode *macro_head, ErrorInfo *error_info) {
     int word_idx = 0;
     char word [MAX_LINE_LEN];
     
@@ -26,24 +26,24 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx, Macro
 
     get_next_word(line, &word_idx, word);/*gettign the first word in the line*/
     if (is_label(word) == 1) {
-        return handle_label(line, data, line_idx, macro_head); /*returns 1 if successful, -1 if error*/
+        return handle_label(line, data, line_idx, macro_head, error_info); /*returns 1 if successful, -1 if error*/
     }
     else {
         word_idx = 0; /* Reset word_idx to start reading the line again */
         if (is_instruction(word) == 1) {
-            return handle_CODE(line, &word_idx, data);
+            return handle_CODE(line, &word_idx, data, error_info);
         }
         else if (is_data_directive(word) == 1) {
-            return handle_data_directive(line, &word_idx, data);
+            return handle_data_directive(line, &word_idx, data, error_info);
         }
         else if(strcmp(word, ".extern") == 0) { /*check if the word is .extern*/
-            return encode_extern_directive(line, &word_idx, word, data);
+            return encode_extern_directive(line, &word_idx, word, data, error_info);
         }
         else if(strcmp(word, ".entry") == 0) { /*check if the word is .entry*/
-            return handle_entry_directive_first_pass(line, &word_idx, word, data);
+            return handle_entry_directive_first_pass(line, &word_idx, word, data, error_info);
         }
         else {
-            fprintf(stdout, "Error: Unknown instruction or directive '%s' at line %d.\n", word, line_idx);
+            report_errorf(error_info, "Unknown instruction or directive '%s'.", word);
             data->error_flag = 1;
             return -1; /* Unknown instruction or directive */
         }
@@ -56,7 +56,7 @@ int process_line_first_pass(char *line, AssemblerData *data, int line_idx, Macro
 
 
 /*returns 1 if successful, -1 if there was an error*/
-int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
+int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head, ErrorInfo *error_info) {
     char cur_line[MAX_LINE_LEN];
     int line_idx = 0;
     int process_value; /*used to store the return value of functions that may have MEMORY ALLOCATION ERROR*/
@@ -70,22 +70,23 @@ int run_first_pass(FILE *am_file, AssemblerData *data, MacroNode *macro_head) {
 
     while (fgets(cur_line, sizeof(cur_line), am_file) != NULL) {
         line_idx++;
+        set_error_line(error_info, line_idx);
         
         if (strchr(cur_line, '\n') == NULL && !feof(am_file)) {
-            fprintf(stdout, "Error: Line %d exceeds maximum allowed length (%d characters).\n", 
-                    line_idx, MAX_LINE_LEN - 2); 
+            report_errorf(error_info, "Line exceeds maximum allowed length (%d characters).",
+                    MAX_LINE_LEN - 2);
             data->error_flag = 1;
             /* Skip the rest of the line to avoid processing it */
             flush_line(am_file);
         }
         else{  
             /* Process the current line */
-            process_value = process_line_first_pass(cur_line, data, line_idx, macro_head);
+            process_value = process_line_first_pass(cur_line, data, line_idx, macro_head, error_info);
             if (process_value == MEMORY_ALLOCATION_ERROR) {
                 return MEMORY_ALLOCATION_ERROR;
             }
             else if (process_value == -1) {
-                fprintf(stdout, "Error processing line %d.\n", line_idx);
+                report_error(error_info, "Error processing line.");
                 data->error_flag = 1; /* Set error flag */
             }
         }

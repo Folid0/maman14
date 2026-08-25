@@ -101,7 +101,7 @@ int get_next_command(char *line, int *index, char *word){
 /*checks if its a mcro and then puts the name of the mcro into name*/
 /*returns 0 if not mcro and 1 if mcro*/
 /*returns -1 if there is an error*/
-int get_macro_initialization_name_from_line(char *line, char* name){
+int get_macro_initialization_name_from_line(char *line, char* name, ErrorInfo *error_info){
     char word[MAX_LINE_LEN];
     int word_idx = 0;
     int i = 0;
@@ -116,25 +116,25 @@ int get_macro_initialization_name_from_line(char *line, char* name){
         
         /*checks if valid mcro name*/
         if (get_next_word(line, &word_idx, word) == 0){
-            fprintf(stdout, "Error: Macro name is missing.\n");
+            report_error(error_info, "Macro name is missing.");
             return -1;
         }
         if (is_reserved_word(word) == 1){
-            fprintf(stdout, "Error: Macro name is reserved.\n");
+            report_error(error_info, "Macro name is reserved.");
             return -1;
         } 
         if (!isalpha((unsigned char)word[0])) {
-            fprintf(stdout, "Error: Macro name must start with a letter.\n");
+            report_error(error_info, "Macro name must start with a letter.");
             return -1; /* Macro name must start with a letter */;
         }
 
         if (strlen(word) >= MAX_MACRO_NAME_LEN) {
-            fprintf(stdout, "Error: Macro name exceeds maximum length of %d characters.\n", MAX_MACRO_NAME_LEN);
+            report_errorf(error_info, "Macro name exceeds maximum length of %d characters.", MAX_MACRO_NAME_LEN);
             return -1; /* Macro name exceeds maximum length */;
         }
         for (i = 1; word[i] != '\0' && word[i] != '\n'; i++) { /*checks if the name contains only alphanumeric characters*/
             if (!isalnum((unsigned char)word[i]) && word[i] != '_') {
-                fprintf(stdout, "Error: Macro name must contain only alphanumeric characters or underscores.\n");
+                report_error(error_info, "Macro name must contain only alphanumeric characters or underscores.");
                 return -1; /* Macro name must contain only alphanumeric characters or underscores */;
             }
         }
@@ -143,7 +143,7 @@ int get_macro_initialization_name_from_line(char *line, char* name){
         strcpy(name, word);
 
         if (get_next_word(line, &word_idx, word) == 1){ /*the name has a white space or illegal character*/
-            fprintf(stdout, "Error: Macro name must be a single word.\n");
+            report_error(error_info, "Macro name must be a single word.");
             return -1;
         }  
 

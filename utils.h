@@ -3,6 +3,7 @@
 
 #include "data_table.h"
 #include "macro_table.h"
+#include "error_information.h"
 
 /*returns the index of the first non-whitespace character from the given index*/
 int skip_whitespace(char *line, int index);
@@ -13,7 +14,7 @@ int get_next_word(char *line, int *index, char *word);
 /*checks if its a mcro and then puts the name of the mcro into name*/
 /*returns 0 if not mcro and 1 if mcro*/
 /*returns -1 if there is an error*/
-int get_macro_initialization_name_from_line(char *line, char* name);
+int get_macro_initialization_name_from_line(char *line, char* name, ErrorInfo *error_info);
 
 
 /*puts the next word into word, returns 1 if there was a word and 0 if there is no word, stops at the next word*/

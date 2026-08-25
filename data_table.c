@@ -7,10 +7,10 @@
 #include <ctype.h>
 
 /*returns 1 if label was added successfully, -1 otherwise, -2 for memory allocation error*/
-int add_label(LabelNode **head, char *name, int address, LabelType type) {
+int add_label(LabelNode **head, char *name, int address, LabelType type, ErrorInfo *error_info) {
     LabelNode *new_node = (LabelNode *)malloc(sizeof(LabelNode));
     if (new_node == NULL) {
-        fprintf(stdout, "Memory allocation failed for new label node.\n");
+        report_error(error_info, "Memory allocation failed for new label node.");
         return MEMORY_ALLOCATION_ERROR; /*memory allocation failed*/
     }
     /* Initialize the new label node */
@@ -125,10 +125,10 @@ int is_valid_label_name(const char *name)
 
 /*adds a new extern usage node to the list*/
 /*returns 1 if successful, -1 otherwise, returns -2 if memory allocation fails*/
-int add_ExternUsage_node(ExternUsageNode **head, char *name, long address) {
+int add_ExternUsage_node(ExternUsageNode **head, char *name, long address, ErrorInfo *error_info) {
     ExternUsageNode *new_node = (ExternUsageNode *)malloc(sizeof(ExternUsageNode));
     if (new_node == NULL) {
-        fprintf(stdout, "Memory allocation failed for new extern usage node.\n");
+        report_error(error_info, "Memory allocation failed for new extern usage node.");
         return MEMORY_ALLOCATION_ERROR; /* Memory allocation failed */
     }
 
@@ -177,9 +177,9 @@ void free_label_table(LabelNode *head){
 
 /*initialize AssemblerData*/
 /*returns 1 if successful, -1 if failed*/
-int initialize_assembler_data(AssemblerData *data) {
+int initialize_assembler_data(AssemblerData *data, ErrorInfo *error_info) {
     if (data == NULL) {
-        fprintf(stdout, "Error: AssemblerData pointer is NULL\n");
+        report_error(error_info, "AssemblerData pointer is NULL");
         return -1;
     }
     memset(data->code_image, 0, sizeof(data->code_image));

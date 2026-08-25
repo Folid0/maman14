@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "consts.h"
+#include "error_information.h"
 
 typedef enum{
     CODE,
@@ -42,7 +43,7 @@ typedef struct ExternLabelNode{
 
 
 /*returns 1 if label was added successfully, -1 otherwise, -2 for memory allocation error*/
-int add_label(LabelNode **head, char *name, int address, LabelType type);
+int add_label(LabelNode **head, char *name, int address, LabelType type, ErrorInfo *error_info);
 
 /*returns 1 if the word is a label, 0 otherwise*/
 int is_label(const char *word);
@@ -59,11 +60,11 @@ int is_valid_label_name(const char *name);
 
 /*adds a new extern usage node to the list*/
 /*returns 1 if successful, -1 otherwise, returns -2 if memory allocation fails*/
-int add_ExternUsage_node(ExternUsageNode **head, char *name, long address);
+int add_ExternUsage_node(ExternUsageNode **head, char *name, long address, ErrorInfo *error_info);
 
 /*initialize AssemblerData*/
 /*returns 1 if successful, -1 if failed*/
-int initialize_assembler_data(AssemblerData *data);
+int initialize_assembler_data(AssemblerData *data, ErrorInfo *error_info);
 
 
 /*frees the nodes in the ExternUsageNode list*/
