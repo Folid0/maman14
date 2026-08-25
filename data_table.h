@@ -43,24 +43,32 @@ typedef struct ExternLabelNode{
 
 /*returns 1 if label was added successfully, -1 otherwise, -2 for memory allocation error*/
 int add_label(LabelNode **head, char *name, int address, LabelType type);
+
 /*returns 1 if the word is a label, 0 otherwise*/
 int is_label(const char *word);
+
 /*gets a label, returns the label type*/
 LabelType get_label_type(const char *word);
+
 /* returns a pointer to the label node if found, NULL otherwise */
 LabelNode* find_label(LabelNode *head, const char *name);
+
 /*checking if its a valid symbol name without the ":"*/
 /*returns 1 if the symbol name is valid, 0 otherwise*/
 int is_valid_label_name(const char *name);
+
 /*adds a new extern usage node to the list*/
 /*returns 1 if successful, -1 otherwise, returns -2 if memory allocation fails*/
 int add_ExternUsage_node(ExternUsageNode **head, char *name, long address);
+
 /*initialize AssemblerData*/
 /*returns 1 if successful, -1 if failed*/
 int initialize_assembler_data(AssemblerData *data);
 
+
 /*frees the nodes in the ExternUsageNode list*/
 void free_extern_usage_table(ExternUsageNode *head);
+
 /*frees the nodes in the LabelNode list*/
 void free_label_table(LabelNode *head);
 
