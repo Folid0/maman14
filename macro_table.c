@@ -151,7 +151,7 @@ int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,
 }
 
 /* Replace a macro with its lines in the output file */
-/*returns 0 if successful, -1 if an error occurs*/
+/*returns 1 if successful, -1 if an error occurs*/
 int replace_macro(MacroNode *macro, FILE *output_file_am, ErrorInfo *error_info) {
     LineNode *cur_line_node;
     if (macro == NULL) {
@@ -169,11 +169,11 @@ int replace_macro(MacroNode *macro, FILE *output_file_am, ErrorInfo *error_info)
         cur_line_node = cur_line_node->next;
     }
 
-    return 0; 
+    return 1; 
 }
 
 /*puts the line to the output file am and if there is a macro it replaces it*/
-/*returns 0 if successful, -1 if an error occurs*/
+/*returns 1 if successful, -1 if an error occurs*/
 int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head, ErrorInfo *error_info) {
     char cur_word[MAX_LINE_LEN];
     int word_idx = 0;
@@ -205,5 +205,5 @@ int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head, Er
         }
     }
 
-    return 0; 
+    return 1; 
 }

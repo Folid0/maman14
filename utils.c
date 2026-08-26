@@ -129,7 +129,7 @@ int get_macro_initialization_name_from_line(char *line, char* name, ErrorInfo *e
         }
 
         if (strlen(word) >= MAX_MACRO_NAME_LEN) {
-            report_errorf(error_info, "Macro name exceeds maximum length of %d characters.", MAX_MACRO_NAME_LEN);
+            report_errorf(error_info, "Macro name exceeds maximum length of %d characters.", MAX_MACRO_NAME_LEN - 1);
             return -1; /* Macro name exceeds maximum length */;
         }
         for (i = 1; word[i] != '\0' && word[i] != '\n'; i++) { /*checks if the name contains only alphanumeric characters*/

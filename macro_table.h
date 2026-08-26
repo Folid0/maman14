@@ -22,7 +22,7 @@ typedef struct MacroNode {
 
 
 /* Add a new macro to the list */
-/*returns -1 if an error occurs, 0 if successful*/
+/*returns -1 if an error occurs, 1 if successful*/
 int add_macro(MacroNode **head, char *name, ErrorInfo *error_info);
 
 /* Add a line to a macro */
@@ -41,11 +41,11 @@ void free_macro_table(MacroNode *head);
 int add_lineblock_to_macro(MacroNode *node, char *cur_line, FILE *input_file_as,int *line_idx, ErrorInfo *error_info);
 
 /*puts the line to the output file am and if there is a macro it replaces it*/
-/*returns 0 if successful, -1 if an error occurs*/
+/*returns 1 if successful, -1 if an error occurs*/
 int put_line(FILE *output_file_am, char *cur_line, MacroNode *mcro_node_head, ErrorInfo *error_info);
 
 /* Replace a macro with its lines in the output file */
-/*returns 0 if successful, -1 if an error occurs*/
+/*returns 1 if successful, -1 if an error occurs*/
 int replace_macro(MacroNode *macro, FILE *output_file_am, ErrorInfo *error_info);
 
 

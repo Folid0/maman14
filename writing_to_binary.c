@@ -498,7 +498,7 @@ int encode_db_dw_db_directive(char *line, int *word_idx, char *name, AssemblerDa
     }
 
     if (state == 0) {
-        report_error(error_info, "trailing comma without a number");
+        report_errorf(error_info, "missing number or trailing comma in directive '%s'", name);
         data->error_flag = 1; 
         return -1;
     }
@@ -643,7 +643,10 @@ int handle_label(char *line, AssemblerData *data, int line_idx, MacroNode *macro
         return -1;
     }
     command_idx = word_idx; /*the index after the label name*/
-    get_next_word(line, &word_idx, command_name); /* Move to the next word after the label */
+    if (get_next_word(line, &word_idx, command_name) == 0) { /* Move to the next word after the label */
+        report_error(error_info, "Missing instruction or directive after label.");
+        return -1;
+    }
     type = get_label_type(command_name); /*setting type*/
 
     if (find_label(data->label_head, label_name) != NULL) { /* Check if the label already exists in the symbol table */
